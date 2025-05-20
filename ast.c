@@ -130,15 +130,6 @@ void free_ast(ASTNode *node) {
   free(node);
 }
 
-static int env_lookup(Env *env, const char *name) {
-  for (Env *e = env; e; e = e->next) {
-    if (strcmp(e->name, name) == 0)
-      return e->val;
-  }
-  fprintf(stderr, "Undefined variable %s\n", name);
-  exit(EXIT_FAILURE);
-}
-
 static void env_update(Env **env, const char *name, int val) {
   for (Env *e = *env; e; e = e->next) {
     if (strcmp(e->name, name) == 0) {
@@ -153,6 +144,15 @@ static void env_update(Env **env, const char *name, int val) {
   *env = e;
 }
 
+static int env_lookup(Env **env, const char *name) {
+  for (Env *e = *env; e; e = e->next) {
+    if (strcmp(e->name, name) == 0)
+      return e->val;
+  }
+  env_update(env, name, 0);
+  return env_lookup(env, name);
+}
+
 void env_print(Env *env) {
   Env *e = env;
   while (e) {
@@ -164,7 +164,7 @@ void env_print(Env *env) {
 static int eval_aexpr(Env **env, ASTNode *node) {
   switch (node->type) {
     case NT_INT: return node->u.d_int.val;
-    case NT_VAR: return env_lookup(*env, node->u.d_var.name);
+    case NT_VAR: return env_lookup(env, node->u.d_var.name);
     case NT_AOP: {
       int aexp1 = eval_aexpr(env, node->u.d_aop.aexp1);
       int aexp2 = eval_aexpr(env, node->u.d_aop.aexp2);
