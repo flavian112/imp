@@ -22,8 +22,9 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   
-  exec_stmt(ast_root);
-  env_print();
+  Env *env = NULL;
+  exec_stmt(&env, ast_root);
+  env_print(env);
   free_ast(ast_root);
   
   return EXIT_SUCCESS;

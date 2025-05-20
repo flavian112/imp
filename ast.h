@@ -38,9 +38,15 @@ ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2);
 ASTNode *ast_not(ASTNode *bexp);
 ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2);
 
-void exec_stmt(ASTNode *node);
+typedef struct Env {
+  char *name;
+  int val;
+  struct Env *next;
+} Env;
+
+void exec_stmt(Env **env, ASTNode *node);
 void free_ast(ASTNode *node);
-void env_print(void);
+void env_print(Env *env);
 
 #endif
 
