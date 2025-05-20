@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
+
 typedef enum {
   NT_SKIP, NT_ASSIGN, NT_SEQ, NT_IF, NT_WHILE,
   NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP
@@ -26,6 +27,7 @@ typedef struct ASTNode {
   } u;
 } ASTNode;
 
+
 ASTNode *ast_skip(void);
 ASTNode *ast_assign(ASTNode *var, ASTNode *aexp);
 ASTNode *ast_seq(ASTNode *stm1, ASTNode *stm2);
@@ -38,7 +40,7 @@ ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2);
 ASTNode *ast_not(ASTNode *bexp);
 ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2);
 
-void free_ast(ASTNode *node);
+void ast_free(ASTNode *node);
 
 #endif
 

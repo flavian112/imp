@@ -22,10 +22,11 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   
-  Env *env = NULL;
-  exec_stmt(&env, ast_root);
-  env_print(env);
-  free_ast(ast_root);
+  hashmap_t context = hashmap_create();
+  exec_stmt(context, ast_root);
+  context_print(context);
+  hashmap_free(context);
+  ast_free(ast_root);
   
   return EXIT_SUCCESS;
 }

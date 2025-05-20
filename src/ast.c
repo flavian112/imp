@@ -1,10 +1,13 @@
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ast.h"
+#include <assert.h>
+
 
 static ASTNode *new_node(NodeType type) {
   ASTNode *node = malloc(sizeof(ASTNode));
+  assert(node);
   node->type = type;
   return node;
 }
@@ -51,6 +54,7 @@ ASTNode *ast_int(int val) {
 ASTNode *ast_var(char *name) {
   ASTNode *node = new_node(NT_VAR);
   node->u.d_var.name = strdup(name);
+  assert(node->u.d_var.name);
   return node;
 }
 
@@ -84,27 +88,27 @@ ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2) {
   return node;
 }
 
-void free_ast(ASTNode *node) {
+void ast_free(ASTNode *node) {
   if (!node) return;
   switch (node->type) {
     case NT_SKIP:
       break;
     case NT_ASSIGN:
-      free_ast(node->u.d_assign.var);
-      free_ast(node->u.d_assign.aexp);
+      ast_free(node->u.d_assign.var);
+      ast_free(node->u.d_assign.aexp);
       break;
     case NT_SEQ:
-      free_ast(node->u.d_seq.stm1);
-      free_ast(node->u.d_seq.stm2);
+      ast_free(node->u.d_seq.stm1);
+      ast_free(node->u.d_seq.stm2);
       break;
     case NT_IF:
-      free_ast(node->u.d_if.bexp);
-      free_ast(node->u.d_if.stm1);
-      free_ast(node->u.d_if.stm2);
+      ast_free(node->u.d_if.bexp);
+      ast_free(node->u.d_if.stm1);
+      ast_free(node->u.d_if.stm2);
       break;
     case NT_WHILE:
-      free_ast(node->u.d_while.bexp);
-      free_ast(node->u.d_while.stm);
+      ast_free(node->u.d_while.bexp);
+      ast_free(node->u.d_while.stm);
       break;
     case NT_INT:
       break;
@@ -112,19 +116,19 @@ void free_ast(ASTNode *node) {
       free(node->u.d_var.name);
       break;
     case NT_AOP:
-      free_ast(node->u.d_aop.aexp1);
-      free_ast(node->u.d_aop.aexp2);
+      ast_free(node->u.d_aop.aexp1);
+      ast_free(node->u.d_aop.aexp2);
       break;
     case NT_BOP:
-      free_ast(node->u.d_bop.bexp1);
-      free_ast(node->u.d_bop.bexp2);
+      ast_free(node->u.d_bop.bexp1);
+      ast_free(node->u.d_bop.bexp2);
       break;
     case NT_ROP:
-      free_ast(node->u.d_rop.aexp1);
-      free_ast(node->u.d_rop.aexp2);
+      ast_free(node->u.d_rop.aexp1);
+      ast_free(node->u.d_rop.aexp2);
       break;
     case NT_NOT:
-      free_ast(node->u.d_not.bexp);
+      ast_free(node->u.d_not.bexp);
       break;
   }
   free(node);

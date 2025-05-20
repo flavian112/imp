@@ -1,17 +1,13 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+
 #include "ast.h"
+#include "hash_map.h"
 
 
-typedef struct Env {
-  char *name;
-  int val;
-  struct Env *next;
-} Env;
-
-void exec_stmt(Env **env, ASTNode *node);
-void env_print(Env *env);
+void exec_stmt(hashmap_t context, ASTNode *node);
+void context_print(hashmap_t context);
 
 
 #endif
