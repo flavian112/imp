@@ -18,7 +18,7 @@ OBJS      := $(BUILD_DIR)/parser.tab.o $(BUILD_DIR)/lex.yy.o $(BUILD_DIR)/driver
 
 TARGET    := $(BUILD_DIR)/imp
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: $(TARGET)
 
@@ -45,6 +45,9 @@ $(BUILD_DIR)/driver.o: $(DRIVER_C) $(PARSER_H) $(AST_H) | $(BUILD_DIR)
 
 $(BUILD_DIR)/ast.o: $(AST_C) $(AST_H) | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $(AST_C) -o $@
+
+run: $(TARGET)
+	./$(TARGET) example.imp
 
 clean:
 	rm -rf $(BUILD_DIR)
