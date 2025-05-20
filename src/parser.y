@@ -29,7 +29,7 @@ void yyerror(const char *s) {
 %token       TOKEN_LEFT_PARENTHESIS TOKEN_RIGHT_PARENTHESIS
 %token       TOKEN_SEMICOLON
 %token       TOKEN_SKIP
-%token       TOKEN_IF TOKEN_THEN TOKEN_ELSE TOKEN_END TOKEN_WHILE TOKEN_DO
+%token       TOKEN_IF TOKEN_THEN TOKEN_ELSE TOKEN_END TOKEN_WHILE TOKEN_DO TOKEN_VAR TOKEN_IN
 %token       TOKEN_PLUS TOKEN_MINUS TOKEN_MULTIPLY
 %token       TOKEN_NOT TOKEN_OR TOKEN_AND
 %token       TOKEN_EQUALS TOKEN_NOT_EQUALS TOKEN_LESS_THAN TOKEN_LESS_EQUAL TOKEN_GREATER_THAN TOKEN_GREATER_EQUAL
@@ -54,6 +54,8 @@ statement             : TOKEN_SKIP
                         { $$ = ast_if($2, $4, $6); }
                       | TOKEN_WHILE boolean_expression TOKEN_DO statement TOKEN_END
                         { $$ = ast_while($2, $4); }
+                      | TOKEN_VAR variable TOKEN_ASSIGN arithmetic_expression TOKEN_IN statement TOKEN_END
+                        { $$ = ast_let($2, $4, $6); }
                       ;
 
 variable              : TOKEN_IDENTIFIER

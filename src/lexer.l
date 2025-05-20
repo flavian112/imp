@@ -17,6 +17,8 @@ WHITESPACE  [ \t\r\n]+
 "end"           { return TOKEN_END; }
 "while"         { return TOKEN_WHILE; }
 "do"            { return TOKEN_DO; }
+"var"           { return TOKEN_VAR; }
+"in"            { return TOKEN_IN; }
 
 "("             { return TOKEN_LEFT_PARENTHESIS; }
 ")"             { return TOKEN_RIGHT_PARENTHESIS; }

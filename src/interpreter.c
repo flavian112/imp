@@ -76,9 +76,9 @@ void exec_stmt(hashmap_t context, ASTNode *node) {
       case NT_SKIP:
         return;
       case NT_ASSIGN: {
-        char *var = node->u.d_assign.var->u.d_var.name;
+        char *name = node->u.d_assign.var->u.d_var.name;
         int val = eval_aexpr(context, node->u.d_assign.aexp);
-        context_set(context, var, val);
+        context_set(context, name, val);
         return;
       }
       case NT_SEQ:
@@ -96,6 +96,15 @@ void exec_stmt(hashmap_t context, ASTNode *node) {
           exec_stmt(context, node->u.d_while.stm);
         }
         return;
+      case NT_LET: {
+        char *name = node->u.d_let.var->u.d_var.name;
+        int old_val = context_get(context, name);
+        int new_val = eval_aexpr(context, node->u.d_let.aexp);
+        context_set(context, name, new_val);
+        exec_stmt(context, node->u.d_let.stm);
+        context_set(context, name, old_val);
+        return;
+      }
       default:
         fprintf(stderr, "Bad stmt node %d\n", node->type);
         exit(EXIT_FAILURE);

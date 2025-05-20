@@ -4,7 +4,7 @@
 
 typedef enum {
   NT_SKIP, NT_ASSIGN, NT_SEQ, NT_IF, NT_WHILE,
-  NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP
+  NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP, NT_LET
 } NodeType;
 
 typedef enum { AOP_ADD, AOP_SUB, AOP_MUL } AOp;
@@ -24,6 +24,7 @@ typedef struct ASTNode {
     struct { BOp bop; struct ASTNode *bexp1, *bexp2; } d_bop;
     struct { struct ASTNode *bexp; } d_not;
     struct { ROp rop; struct ASTNode *aexp1, *aexp2; } d_rop;
+    struct { struct ASTNode *var, *aexp, *stm; } d_let;
   } u;
 } ASTNode;
 
@@ -39,6 +40,7 @@ ASTNode *ast_aop(AOp aop, ASTNode *aexp1, ASTNode *aexp2);
 ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2);
 ASTNode *ast_not(ASTNode *bexp);
 ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2);
+ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm);
 
 void ast_free(ASTNode *node);
 

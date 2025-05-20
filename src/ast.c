@@ -88,6 +88,15 @@ ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2) {
   return node;
 }
 
+ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm) {
+  ASTNode *node = new_node(NT_LET);
+  node->u.d_let.var = var;
+  node->u.d_let.aexp = aexp;
+  node->u.d_let.stm = stm;
+  return node;
+}
+
+
 void ast_free(ASTNode *node) {
   if (!node) return;
   switch (node->type) {
