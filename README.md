@@ -2,7 +2,7 @@
 
 A small interpreter of the IMP programming language.
 
-# Build
+## Build
 
 - `make all` to build interpreter.
 - `make run` to interpret "example.imp".

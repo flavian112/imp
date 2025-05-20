@@ -5,8 +5,12 @@
 extern char *yytext;
 extern int yylineno;
 extern int yylex();
-void yyerror(const char *s) { fprintf(stderr, "Parse error at token \"%s\", line %d: %s\n", yytext, yylineno, s); }
+
 ASTNode *ast_root;
+
+void yyerror(const char *s) { 
+  fprintf(stderr, "Parse error at token \"%s\", line %d: %s\n", yytext, yylineno, s); 
+}
 %}
 
 

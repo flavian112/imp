@@ -4,13 +4,9 @@
 #include "ast.h"
 
 static ASTNode *new_node(NodeType type) {
-  ASTNode *n = malloc(sizeof(ASTNode));
-  if (!n) {
-    fprintf(stderr, "Out of memory\n");
-    exit(EXIT_FAILURE);
-  }
-  n->type = type;
-  return n;
+  ASTNode *node = malloc(sizeof(ASTNode));
+  node->type = type;
+  return node;
 }
 
 ASTNode *ast_skip(void) {
@@ -18,142 +14,148 @@ ASTNode *ast_skip(void) {
 }
 
 ASTNode *ast_assign(ASTNode *var, ASTNode *aexp) {
-  ASTNode *n = new_node(NT_ASSIGN);
-  n->u.assign.var = var;
-  n->u.assign.aexp = aexp;
-  return n;
+  ASTNode *node = new_node(NT_ASSIGN);
+  node->u.d_assign.var = var;
+  node->u.d_assign.aexp = aexp;
+  return node;
 }
 
-ASTNode *ast_seq(ASTNode *s1, ASTNode *s2) {
-  ASTNode *n = new_node(NT_SEQ);
-  n->u.seq.s1 = s1;
-  n->u.seq.s2 = s2;
-  return n;
+ASTNode *ast_seq(ASTNode *stm1, ASTNode *stm2) {
+  ASTNode *node = new_node(NT_SEQ);
+  node->u.d_seq.stm1 = stm1;
+  node->u.d_seq.stm2 = stm2;
+  return node;
 }
 
-ASTNode *ast_if(ASTNode *bexp, ASTNode *s1, ASTNode *s2) {
-  ASTNode *n = new_node(NT_IF);
-  n->u.cond.bexp = bexp;
-  n->u.cond.s1 = s1;
-  n->u.cond.s2 = s2;
-  return n;
+ASTNode *ast_if(ASTNode *bexp, ASTNode *stm1, ASTNode *stm2) {
+  ASTNode *node = new_node(NT_IF);
+  node->u.d_if.bexp = bexp;
+  node->u.d_if.stm1 = stm1;
+  node->u.d_if.stm2 = stm2;
+  return node;
 }
 
-ASTNode *ast_while(ASTNode *bexp, ASTNode *s) {
-  ASTNode *n = new_node(NT_WHILE);
-  n->u.cond.bexp = bexp;
-  n->u.cond.s1 = s;
-  return n;
+ASTNode *ast_while(ASTNode *bexp, ASTNode *stm) {
+  ASTNode *node = new_node(NT_WHILE);
+  node->u.d_while.bexp = bexp;
+  node->u.d_while.stm = stm;
+  return node;
 }
 
 ASTNode *ast_int(int val) {
-  ASTNode *n = new_node(NT_INT);
-  n->u.val = val;
-  return n;
+  ASTNode *node = new_node(NT_INT);
+  node->u.d_int.val = val;
+  return node;
 }
 
-ASTNode *ast_var(char *var) {
-  ASTNode *n = new_node(NT_VAR);
-  n->u.var = strdup(var);
-  return n;
+ASTNode *ast_var(char *name) {
+  ASTNode *node = new_node(NT_VAR);
+  node->u.d_var.name = strdup(name);
+  return node;
 }
 
-ASTNode *ast_aop(AOp op, ASTNode *aexp1, ASTNode *aexp2) {
-  ASTNode *n = new_node(NT_AOP);
-  n->u.bin.exp1 = aexp1;
-  n->u.bin.exp2 = aexp2;
-  n->u.bin.op.aop = op;
-  return n;
+ASTNode *ast_aop(AOp aop, ASTNode *aexp1, ASTNode *aexp2) {
+  ASTNode *node = new_node(NT_AOP);
+  node->u.d_aop.aexp1 = aexp1;
+  node->u.d_aop.aexp2 = aexp2;
+  node->u.d_aop.aop = aop;
+  return node;
 }
 
-ASTNode *ast_bop(BOp op, ASTNode *bexp1, ASTNode *bexp2) {
-  ASTNode *n = new_node(NT_BOP);
-  n->u.bin.exp1 = bexp1;
-  n->u.bin.exp2 = bexp2;
-  n->u.bin.op.bop = op;
-  return n;
+ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2) {
+  ASTNode *node = new_node(NT_BOP);
+  node->u.d_bop.bexp1 = bexp1;
+  node->u.d_bop.bexp2 = bexp2;
+  node->u.d_bop.bop = bop;
+  return node;
 }
 
 ASTNode *ast_not(ASTNode *bexp) {
-  ASTNode *n = new_node(NT_NOT);
-  n->u.bexp = bexp;
-  return n;
+  ASTNode *node = new_node(NT_NOT);
+  node->u.d_not.bexp = bexp;
+  return node;
 }
 
-ASTNode *ast_rop(ROp op, ASTNode *aexp1, ASTNode *aexp2) {
-  ASTNode *n = new_node(NT_ROP);
-  n->u.bin.exp1 = aexp1;
-  n->u.bin.exp2 = aexp2;
-  n->u.bin.op.rop = op;
-  return n;
+ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2) {
+  ASTNode *node = new_node(NT_ROP);
+  node->u.d_rop.aexp1 = aexp1;
+  node->u.d_rop.aexp2 = aexp2;
+  node->u.d_rop.rop = rop;
+  return node;
 }
 
-void free_ast(ASTNode *n) {
-  if (!n) return;
-  switch (n->type) {
+void free_ast(ASTNode *node) {
+  if (!node) return;
+  switch (node->type) {
     case NT_SKIP:
       break;
     case NT_ASSIGN:
-      free_ast(n->u.assign.var);
-      free_ast(n->u.assign.aexp);
+      free_ast(node->u.d_assign.var);
+      free_ast(node->u.d_assign.aexp);
       break;
     case NT_SEQ:
-      free_ast(n->u.seq.s1);
-      free_ast(n->u.seq.s2);
+      free_ast(node->u.d_seq.stm1);
+      free_ast(node->u.d_seq.stm2);
       break;
     case NT_IF:
-      free_ast(n->u.cond.bexp);
-      free_ast(n->u.cond.s1);
-      free_ast(n->u.cond.s2);
+      free_ast(node->u.d_if.bexp);
+      free_ast(node->u.d_if.stm1);
+      free_ast(node->u.d_if.stm2);
       break;
     case NT_WHILE:
-      free_ast(n->u.cond.bexp);
-      free_ast(n->u.cond.s1);
+      free_ast(node->u.d_while.bexp);
+      free_ast(node->u.d_while.stm);
       break;
     case NT_INT:
       break;
     case NT_VAR:
-      free(n->u.var);
+      free(node->u.d_var.name);
       break;
     case NT_AOP:
+      free_ast(node->u.d_aop.aexp1);
+      free_ast(node->u.d_aop.aexp2);
+      break;
     case NT_BOP:
+      free_ast(node->u.d_bop.bexp1);
+      free_ast(node->u.d_bop.bexp2);
+      break;
     case NT_ROP:
-      free_ast(n->u.bin.exp1);
-      free_ast(n->u.bin.exp2);
+      free_ast(node->u.d_rop.aexp1);
+      free_ast(node->u.d_rop.aexp2);
       break;
     case NT_NOT:
-      free_ast(n->u.bexp);
+      free_ast(node->u.d_not.bexp);
       break;
   }
-  free(n);
+  free(node);
 }
 
 typedef struct Env {
-  char *var;
+  char *name;
   int val;
   struct Env *next;
 } Env;
 
 static Env *env = NULL;
 
-static int env_lookup(const char *var) {
+static int env_lookup(const char *name) {
   for (Env *e = env; e; e = e->next) {
-    if (strcmp(e->var, var) == 0)
+    if (strcmp(e->name, name) == 0)
       return e->val;
   }
-  fprintf(stderr, "Undefined variable %s\n", var);
+  fprintf(stderr, "Undefined variable %s\n", name);
   exit(EXIT_FAILURE);
 }
 
-static void env_update(const char *var, int val) {
+static void env_update(const char *name, int val) {
   for (Env *e = env; e; e = e->next) {
-    if (strcmp(e->var, var) == 0) {
+    if (strcmp(e->name, name) == 0) {
       e->val = val;
       return;
     }
   }
   Env *e = malloc(sizeof(Env));
-  e->var = strdup(var);
+  e->name = strdup(name);
   e->val = val;
   e->next = env;
   env = e;
@@ -162,47 +164,47 @@ static void env_update(const char *var, int val) {
 void env_print(void) {
   Env *current_env = env;
   while (current_env) {
-    printf("%s = %d\n", current_env->var, current_env->val);
+    printf("%s = %d\n", current_env->name, current_env->val);
     current_env = current_env->next;
   }
 }
 
 
-static int eval_aexpr(ASTNode *n) {
-  switch (n->type) {
-    case NT_INT: return n->u.val;
-    case NT_VAR: return env_lookup(n->u.var);
+static int eval_aexpr(ASTNode *node) {
+  switch (node->type) {
+    case NT_INT: return node->u.d_int.val;
+    case NT_VAR: return env_lookup(node->u.d_var.name);
     case NT_AOP: {
-      int aexp1 = eval_aexpr(n->u.bin.exp1);
-      int aexp2 = eval_aexpr(n->u.bin.exp2);
-      switch (n->u.bin.op.aop) {
+      int aexp1 = eval_aexpr(node->u.d_aop.aexp1);
+      int aexp2 = eval_aexpr(node->u.d_aop.aexp2);
+      switch (node->u.d_aop.aop) {
         case AOP_ADD: return aexp1 + aexp2;
         case AOP_SUB: return aexp1 - aexp2;
         case AOP_MUL: return aexp1 * aexp2;
       }
     }
     default:
-      fprintf(stderr, "Bad aexpr node %d\n", n->type);
+      fprintf(stderr, "Bad aexpr node %d\n", node->type);
       exit(EXIT_FAILURE);
   }
 }
 
-static int eval_bexpr(ASTNode *n) {
-  switch (n->type) {
+static int eval_bexpr(ASTNode *node) {
+  switch (node->type) {
     case NT_BOP: {
-      int bexp1 = eval_bexpr(n->u.bin.exp1);
-      int bexp2 = eval_bexpr(n->u.bin.exp2);
-      switch (n->u.bin.op.bop) {
+      int bexp1 = eval_bexpr(node->u.d_bop.bexp1);
+      int bexp2 = eval_bexpr(node->u.d_bop.bexp2);
+      switch (node->u.d_bop.bop) {
         case BOP_AND: return bexp1 && bexp2;
         case BOP_OR:  return bexp1 || bexp2;
       }
     }
     case NT_NOT:
-      return !eval_bexpr(n->u.bexp);
+      return !eval_bexpr(node->u.d_not.bexp);
     case NT_ROP: {
-      int aexp1 = eval_aexpr(n->u.bin.exp1);
-      int aexp2 = eval_aexpr(n->u.bin.exp2);
-      switch (n->u.bin.op.rop) {
+      int aexp1 = eval_aexpr(node->u.d_rop.aexp1);
+      int aexp2 = eval_aexpr(node->u.d_rop.aexp2);
+      switch (node->u.d_rop.rop) {
         case ROP_EQ: return aexp1 == aexp2;
         case ROP_NE: return aexp1 != aexp2;
         case ROP_LT: return aexp1 < aexp2;
@@ -212,39 +214,39 @@ static int eval_bexpr(ASTNode *n) {
       }
     }
     default:
-      fprintf(stderr, "Bad bexpr node %d\n", n->type);
+      fprintf(stderr, "Bad bexpr node %d\n", node->type);
       exit(EXIT_FAILURE);
   }
 }
 
-void exec_stmt(ASTNode *n) {
-  while (n) {
-    switch (n->type) {
+void exec_stmt(ASTNode *node) {
+  while (node) {
+    switch (node->type) {
       case NT_SKIP:
         return;
       case NT_ASSIGN: {
-        char *var = n->u.assign.var->u.var;
-        int val = eval_aexpr(n->u.assign.aexp);
+        char *var = node->u.d_assign.var->u.d_var.name;
+        int val = eval_aexpr(node->u.d_assign.aexp);
         env_update(var, val);
         return;
       }
       case NT_SEQ:
-        exec_stmt(n->u.seq.s1);
-        n = n->u.seq.s2;
-        continue;
+        exec_stmt(node->u.d_seq.stm1);
+        exec_stmt(node->u.d_seq.stm2);
+        return;
       case NT_IF:
-        if (eval_bexpr(n->u.cond.bexp))
-          exec_stmt(n->u.cond.s1);
+        if (eval_bexpr(node->u.d_if.bexp))
+          exec_stmt(node->u.d_if.stm1);
         else
-          exec_stmt(n->u.cond.s2);
+          exec_stmt(node->u.d_if.stm2);
         return;
       case NT_WHILE:
-        while (eval_bexpr(n->u.cond.bexp)) {
-          exec_stmt(n->u.cond.s1);
+        while (eval_bexpr(node->u.d_while.bexp)) {
+          exec_stmt(node->u.d_while.stm);
         }
         return;
       default:
-        fprintf(stderr, "Bad stmt node %d\n", n->type);
+        fprintf(stderr, "Bad stmt node %d\n", node->type);
         exit(EXIT_FAILURE);
     }
   }

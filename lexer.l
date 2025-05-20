@@ -6,7 +6,7 @@
 
 DIGIT       [0-9]
 IDENT       [A-Za-z][A-Za-z0-9]*
-WS          [ \t\r\n]+
+WHITESPACE  [ \t\r\n]+
 
 %%
 
@@ -41,7 +41,7 @@ WS          [ \t\r\n]+
 {DIGIT}+        { yylval.num = atoi(yytext); return TOKEN_NUMERAL; }
 {IDENT}         { yylval.id = strdup(yytext); return TOKEN_IDENTIFIER; }
 
-{WS}            { }
+{WHITESPACE}    { }
 .               { fprintf(stderr, "Unknown char: %s\n", yytext); }
 
 %%
