@@ -5,7 +5,7 @@ A small interpreter of the IMP programming language.
 ## Build
 
 - `make all` to build interpreter.
-- `make run` to interpret "example.imp".
+- `make example` to interpret "example/example.imp".
 - `make clean` to remove build folder.
 
 ## Dependencies

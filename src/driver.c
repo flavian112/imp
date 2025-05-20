@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "ast.h"
+#include "interpreter.h"
 
 extern FILE *yyin;
 extern int yyparse(void);
