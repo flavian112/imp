@@ -1,32 +1,35 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "interpreter.h"
+#include "repl.h"
 
-extern FILE *yyin;
-extern int yyparse(void);
-extern ASTNode *ast_root;
-
-int main(int argc, char **argv) {
-  if (argc > 1) {
-    yyin = fopen(argv[1], "r");
-    if (!yyin) {
-      perror(argv[1]);
-      return EXIT_FAILURE;
-    }
-  } else {
-    yyin = stdin;
-  }
-  
-  if (yyparse() != 0) {
-    fprintf(stderr, "Parsing failed.\n");
-    return EXIT_FAILURE;
-  }
-  
+static void interpret_file(const char *path) {
   hashmap_t context = hashmap_create();
-  exec_stmt(context, ast_root);
+  exec_file(context, path);
   context_print(context);
   hashmap_free(context);
-  ast_free(ast_root);
-  
+}
+
+int main(int argc, char **argv) {
+  int opt;
+  const char *script = NULL;
+  while ((opt = getopt(argc, argv, "i:h")) != -1) {
+    switch (opt){
+    case 'i':
+      interpret_file(optarg);
+      return EXIT_SUCCESS;
+    case 'h':
+    default:
+      fprintf(stderr, 
+        "Usage: %s [-i program.imp]\n"
+        "  -i <program.imp>   interpret program and exit\n"
+        "  (no args)   start REPL\n",
+        argv[0]);
+      return (opt == 'h') ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+  }
+  repl();
   return EXIT_SUCCESS;
 }

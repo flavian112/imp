@@ -27,7 +27,7 @@ void yyerror(const char *s) {
 %token <num> TOKEN_NUMERAL
 %token       TOKEN_ASSIGN
 %token       TOKEN_LEFT_PARENTHESIS TOKEN_RIGHT_PARENTHESIS
-%left        TOKEN_SEMICOLON
+%token       TOKEN_SEMICOLON
 %token       TOKEN_SKIP
 %token       TOKEN_IF TOKEN_THEN TOKEN_ELSE TOKEN_END TOKEN_WHILE TOKEN_DO TOKEN_VAR TOKEN_IN
 %token       TOKEN_PLUS TOKEN_MINUS TOKEN_MULTIPLY
@@ -50,8 +50,6 @@ statement             : TOKEN_SKIP
                         { $$ = ast_assign($1, $3); }
                       | TOKEN_LEFT_PARENTHESIS statement TOKEN_SEMICOLON statement TOKEN_RIGHT_PARENTHESIS
                         { $$ = ast_seq($2, $4); }
-                      | statement TOKEN_SEMICOLON statement
-                        { $$ = ast_seq($1, $3); }
                       | TOKEN_IF boolean_expression TOKEN_THEN statement TOKEN_ELSE statement TOKEN_END
                         { $$ = ast_if($2, $4, $6); }
                       | TOKEN_WHILE boolean_expression TOKEN_DO statement TOKEN_END

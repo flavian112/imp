@@ -3,11 +3,20 @@
 #include <stdio.h>
 #include <string.h>
 
-static void context_set(hashmap_t context, const char *name, int val) {
+typedef void *YY_BUFFER_STATE;
+extern FILE *yyin;
+extern ASTNode *ast_root;
+extern int yyparse(void);
+extern void yyrestart (FILE *);
+extern YY_BUFFER_STATE yy_scan_string(const char *);
+extern void yy_delete_buffer(YY_BUFFER_STATE);
+
+
+void context_set(hashmap_t context, const char *name, int val) {
   hashmap_insert(context, name, val);
 }
 
-static int context_get(hashmap_t context, const char *name) {
+int context_get(hashmap_t context, const char *name) {
   int *val = hashmap_get(context, name);
   if (val) return *val;
   return 0;
@@ -110,4 +119,37 @@ void exec_stmt(hashmap_t context, ASTNode *node) {
         exit(EXIT_FAILURE);
     }
   }
+}
+
+int exec_file (hashmap_t context, const char *path) {
+  yyin = fopen(path, "r");
+  if (!yyin) {
+    perror(path);
+    return -1;
+  }
+  yyrestart(yyin);
+  if (!yyparse()) {
+    exec_stmt(context, ast_root);
+    ast_free(ast_root);
+  } else {
+    fprintf(stderr, "Parse error in %s\n", path);
+    fclose(yyin);
+    return -1;
+  }
+  fclose(yyin);
+  return 0;
+}
+
+int exec_str (hashmap_t context, const char *str) {
+  YY_BUFFER_STATE buf = yy_scan_string(str);
+  if (!yyparse()) {
+    exec_stmt(context, ast_root);
+    ast_free(ast_root);
+  } else {
+    fprintf(stderr, "Parse error\n");
+    yy_delete_buffer(buf);
+    return -1;
+  }
+  yy_delete_buffer(buf);
+  return 0;
 }

@@ -1,5 +1,6 @@
 CC ?= clang
 CFLAGS ?= -Wall -Wextra -g
+LDFLAGS ?= -lreadline
 BISON ?= bison
 FLEX ?= flex
 
@@ -26,12 +27,12 @@ TARGET := $(BUILD_DIR)/imp
 CFLAGS += -I$(INC_DIR) -MMD -MP
 DEPS := $(OBJS:.o=.d)
 
-.PHONY: all clean example
+.PHONY: all clean example repl
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -52,7 +53,10 @@ $(LEXER_O): $(LEXER_C)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 example: $(TARGET)
-	./$(TARGET) example/example.imp
+	./$(TARGET) -i example/example.imp
+
+repl: $(TARGET)
+	./$(TARGET)
 
 clean:
 	@rm -rf $(BUILD_DIR)
