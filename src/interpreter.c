@@ -101,7 +101,7 @@ void exec_stmt(hashmap_t context, ASTNode *node) {
         int old_val = context_get(context, name);
         int new_val = eval_aexpr(context, node->u.d_let.aexp);
         context_set(context, name, new_val);
-        exec_stmt(context, node->u.d_let.stm);
+        exec_stmt(context, node->u.d_let.stm); 
         context_set(context, name, old_val);
         return;
       }
