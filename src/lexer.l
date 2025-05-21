@@ -10,38 +10,41 @@ WHITESPACE  [ \t\r\n]+
 
 %%
 
-"skip"          { return TOKEN_SKIP; }
-"if"            { return TOKEN_IF; }
-"then"          { return TOKEN_THEN; }
-"else"          { return TOKEN_ELSE; }
-"end"           { return TOKEN_END; }
-"while"         { return TOKEN_WHILE; }
-"do"            { return TOKEN_DO; }
-"var"           { return TOKEN_VAR; }
-"in"            { return TOKEN_IN; }
+"skip"          { return T_SKIP; }
+"if"            { return T_IF; }
+"then"          { return T_THEN; }
+"else"          { return T_ELSE; }
+"end"           { return T_END; }
+"while"         { return T_WHILE; }
+"do"            { return T_DO; }
+"var"           { return T_VAR; }
+"in"            { return T_IN; }
 
-"("             { return TOKEN_LEFT_PARENTHESIS; }
-")"             { return TOKEN_RIGHT_PARENTHESIS; }
-";"             { return TOKEN_SEMICOLON; }
-":="            { return TOKEN_ASSIGN; }
+"("             { return T_LPAREN; }
+")"             { return T_RPAREN; }
+";"             { return T_SEM; }
+":="            { return T_ASSIGN; }
 
-"+"             { return TOKEN_PLUS; }
-"-"             { return TOKEN_MINUS; }
-"*"             { return TOKEN_MULTIPLY; }
+"+"             { return T_PLUS; }
+"-"             { return T_MINUS; }
+"*"             { return T_STAR; }
 
-"or"            { return TOKEN_OR; }
-"and"           { return TOKEN_AND; }
-"not"           { return TOKEN_NOT; }
+"or"            { return T_OR; }
+"and"           { return T_AND; }
+"not"           { return T_NOT; }
 
-"="             { return TOKEN_EQUALS; }
-"#"             { return TOKEN_NOT_EQUALS; }
-"<="            { return TOKEN_LESS_EQUAL; }
-"<"             { return TOKEN_LESS_THAN; }
-">="            { return TOKEN_GREATER_EQUAL; }
-">"             { return TOKEN_GREATER_THAN; }
+"="             { return T_EQ; }
+"#"             { return T_NE; }
+"<="            { return T_LE; }
+"<"             { return T_LT; }
+">="            { return T_GE; }
+">"             { return T_GT; }
 
-{DIGIT}+        { yylval.num = atoi(yytext); return TOKEN_NUMERAL; }
-{IDENT}         { yylval.id = strdup(yytext); return TOKEN_IDENTIFIER; }
+"true"          { return T_TRUE; }
+"false"         { return T_FALSE; }
+
+{DIGIT}+        { yylval.num = atoi(yytext); return T_NUM; }
+{IDENT}         { yylval.id = strdup(yytext); return T_ID; }
 
 {WHITESPACE}    { }
 .               { fprintf(stderr, "Unknown char: %s\n", yytext); }

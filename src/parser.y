@@ -17,93 +17,99 @@ void yyerror(const char *s) {
 %union {
   int            num;
   char           *id;
-  int            op;
   struct ASTNode *node;
 }
 
-%start program
+%start prog
 
-%token <id>  TOKEN_IDENTIFIER
-%token <num> TOKEN_NUMERAL
-%token       TOKEN_ASSIGN
-%token       TOKEN_LEFT_PARENTHESIS TOKEN_RIGHT_PARENTHESIS
-%token       TOKEN_SEMICOLON
-%token       TOKEN_SKIP
-%token       TOKEN_IF TOKEN_THEN TOKEN_ELSE TOKEN_END TOKEN_WHILE TOKEN_DO TOKEN_VAR TOKEN_IN
-%token       TOKEN_PLUS TOKEN_MINUS TOKEN_MULTIPLY
-%token       TOKEN_NOT TOKEN_OR TOKEN_AND
-%token       TOKEN_EQUALS TOKEN_NOT_EQUALS TOKEN_LESS_THAN TOKEN_LESS_EQUAL TOKEN_GREATER_THAN TOKEN_GREATER_EQUAL
+%token <num> T_NUM
+%token <id>  T_ID
+%token       T_EQ T_NE T_LT T_LE T_GT T_GE
+%token       T_TRUE T_FALSE
+%left        T_OR
+%left        T_AND
+%token       T_NOT
+%left        T_PLUS T_MINUS
+%left        T_STAR
+%right       T_UMINUS
+%token       T_END T_IF T_THEN T_ELSE T_WHILE T_DO T_VAR T_IN
+%token       T_SKIP
+%token       T_ASSIGN
+%token       T_LPAREN T_RPAREN
+%token       T_SEM
 
-%type <node> program statement variable arithmetic_expression boolean_expression
-%type <op>   arithmetic_operation boolean_operation relational_operation
-
+%type <node> prog stm var aexp bexp
 
 %%
-  
-program               : statement
-                        { ast_root = $1; }
-                      ;
 
-statement             : TOKEN_SKIP
-                        { $$ = ast_skip(); }
-                      | variable TOKEN_ASSIGN arithmetic_expression
-                        { $$ = ast_assign($1, $3); }
-                      | TOKEN_LEFT_PARENTHESIS statement TOKEN_SEMICOLON statement TOKEN_RIGHT_PARENTHESIS
-                        { $$ = ast_seq($2, $4); }
-                      | TOKEN_IF boolean_expression TOKEN_THEN statement TOKEN_ELSE statement TOKEN_END
-                        { $$ = ast_if($2, $4, $6); }
-                      | TOKEN_WHILE boolean_expression TOKEN_DO statement TOKEN_END
-                        { $$ = ast_while($2, $4); }
-                      | TOKEN_VAR variable TOKEN_ASSIGN arithmetic_expression TOKEN_IN statement TOKEN_END
-                        { $$ = ast_let($2, $4, $6); }
-                      ;
+prog  : stm
+        { ast_root = $1; }
+      ;
 
-variable              : TOKEN_IDENTIFIER
-                        { $$ = ast_var($1); }
-                      ;
+stm   : T_SKIP
+        { $$ = ast_skip(); }
+      | var T_ASSIGN aexp
+        { $$ = ast_assign($1, $3); }
+      | T_LPAREN stm T_SEM stm T_RPAREN
+        { $$ = ast_seq($2, $4); }
+      | stm T_SEM stm
+        { $$ = ast_seq($1, $3); }
+      | stm T_SEM
+        { $$ = $1; }
+      | T_IF bexp T_THEN stm T_ELSE stm T_END
+        { $$ = ast_if($2, $4, $6); }
+      | T_IF bexp T_THEN stm T_END
+        { $$ = ast_if($2, $4, ast_skip()); }
+      | T_WHILE bexp T_DO stm T_END
+        { $$ = ast_while($2, $4); }
+      | T_VAR var T_ASSIGN aexp T_IN stm T_END
+        { $$ = ast_let($2, $4, $6); }
+      ;
 
-arithmetic_expression : TOKEN_LEFT_PARENTHESIS arithmetic_expression arithmetic_operation arithmetic_expression TOKEN_RIGHT_PARENTHESIS
-                        { $$ = ast_aop($3, $2, $4); }
-                      | variable
-                        { $$ = $1; }
-                      | TOKEN_NUMERAL
-                        { $$ = ast_int($1); }
-                      ;
+var   : T_ID
+        { $$ = ast_var($1); }
+      ;
 
-arithmetic_operation  : TOKEN_PLUS
-                        { $$ = AOP_ADD; }
-                      | TOKEN_MINUS
-                        { $$ = AOP_SUB; }
-                      | TOKEN_MULTIPLY
-                        { $$ = AOP_MUL; }
-                      ;
+aexp  : aexp T_PLUS aexp
+        { $$ = ast_aop(AOP_ADD, $1, $3); }
+      | aexp T_MINUS aexp
+        { $$ = ast_aop(AOP_SUB, $1, $3); }
+      | aexp T_STAR aexp
+        { $$ = ast_aop(AOP_MUL, $1, $3); }
+      | T_MINUS aexp %prec T_UMINUS
+        { $$ = ast_aop(AOP_SUB, ast_int(0), $2); }
+      | T_LPAREN aexp T_RPAREN
+        { $$ = $2; }
+      | var
+        { $$ = $1; }
+      | T_NUM
+        { $$ = ast_int($1); }
+      ;
 
-boolean_expression    : TOKEN_LEFT_PARENTHESIS boolean_expression boolean_operation boolean_expression TOKEN_RIGHT_PARENTHESIS
-                        { $$ = ast_bop($3, $2, $4); }
-                      | TOKEN_NOT boolean_expression
-                        { $$ = ast_not($2); }
-                      | arithmetic_expression relational_operation arithmetic_expression
-                        { $$ = ast_rop($2, $1, $3); }
-                      ;
-
-boolean_operation     : TOKEN_OR
-                        { $$ = BOP_OR; }
-                      | TOKEN_AND
-                        { $$ = BOP_AND; }
-                      ;
-
-relational_operation  : TOKEN_EQUALS
-                        { $$ = ROP_EQ; }
-                      | TOKEN_NOT_EQUALS
-                        { $$ = ROP_NE; }
-                      | TOKEN_LESS_THAN
-                        { $$ = ROP_LT; }
-                      | TOKEN_LESS_EQUAL
-                        { $$ = ROP_LE; }
-                      | TOKEN_GREATER_THAN
-                        { $$ = ROP_GT; }
-                      | TOKEN_GREATER_EQUAL
-                        { $$ = ROP_GE; }
-                      ;
+bexp  : bexp T_OR bexp
+        { $$ = ast_bop(BOP_OR, $1, $3); }
+      | bexp T_AND bexp
+        { $$ = ast_bop(BOP_AND, $1, $3); }
+      | T_NOT bexp
+        { $$ = ast_not($2); }
+      | aexp T_EQ aexp
+        { $$ = ast_rop(ROP_EQ, $1, $3); }
+      | aexp T_NE aexp
+        { $$ = ast_rop(ROP_NE, $1, $3); }
+      | aexp T_LE aexp
+        { $$ = ast_rop(ROP_LE, $1, $3); }
+      | aexp T_LT aexp
+        { $$ = ast_rop(ROP_LT, $1, $3); }
+      | aexp T_GE aexp
+        { $$ = ast_rop(ROP_GE, $1, $3); }
+      | aexp T_GT aexp
+        { $$ = ast_rop(ROP_GT, $1, $3); }
+      | T_LPAREN bexp T_RPAREN
+        { $$ = $2; }
+      | T_TRUE
+        { $$ = ast_rop(ROP_EQ, ast_int(1), ast_int(1)); }
+      | T_FALSE
+        { $$ = ast_rop(ROP_EQ, ast_int(0), ast_int(1)); }
+      ;
 
 %%
