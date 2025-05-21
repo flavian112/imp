@@ -139,6 +139,11 @@ void ast_free(ASTNode *node) {
     case NT_NOT:
       ast_free(node->u.d_not.bexp);
       break;
+    case NT_LET:
+      ast_free(node->u.d_let.var);
+      ast_free(node->u.d_let.aexp);
+      ast_free(node->u.d_let.stm);
+      break;
   }
   free(node);
 }
