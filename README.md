@@ -19,7 +19,7 @@ A small interpreter of the IMP programming language.
 
 [Syntax](/res/syntax.ebnf)
 
-**Statement <stm>**
+**Statement `<stm>`**
 Variable assignment:
 - `<var> := <aexp>` any variable not assigned, has the value 0.
 
@@ -33,17 +33,17 @@ Control flow:
 - `skip`, nop
 
 **Expression**
-Arithmetic Expression <aexp>:
+Arithmetic Expression `<aexp>`:
 - `<num>`
 - `<var>`
-- `(<aexp> + <aexp>)
-- `(<aexp> - <aexp>)
-- `(<aexp> + <aexp>)
+- `(<aexp> + <aexp>)`
+- `(<aexp> - <aexp>)`
+- `(<aexp> + <aexp>)`
 
-Boolean Expression <bexp>:
-- `not <bexp>
-- `(<bexp> or <bexp>)
-- `(<bexp> and <bexp>)
+Boolean Expression `<bexp>`:
+- `not <bexp>`
+- `(<bexp> or <bexp>)`
+- `(<bexp> and <bexp>)`
 - `<aexp> = <aexp>`
 - `<aexp> # <aexp>` not equals
 - `<aexp> < <aexp>`
@@ -51,8 +51,8 @@ Boolean Expression <bexp>:
 - `<aexp> > <aexp>`
 - `<aexp> >= <aexp>`
 
-**Variable <var>**
+**Variable `<var>`**
 - `[a-zA-Z][A-Za-z0-9]*`
 
-**Numeral <num>**
+**Numeral `<num>`**
 - `[0-9]+`
