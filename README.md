@@ -19,7 +19,7 @@ A small interpreter of the IMP programming language.
 
 ## Resources
 
-- [Formal Methods and Function Programming (Course Webpage), ETHZ](https://infsec.ethz.ch/education/ss2025/fmfp.html)
+- [Formal Methods and Functional Programming (Course Webpage), ETHZ](https://infsec.ethz.ch/education/ss2025/fmfp.html)
 
 
 ## IMP
