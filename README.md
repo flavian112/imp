@@ -17,6 +17,10 @@ A small interpreter of the IMP programming language.
 - [bison](https://www.gnu.org/software/bison)
 - [readline](https://tiswww.case.edu/php/chet/readline/rltop.html)
 
+## Resources
+
+- [Formal Methods and Function Programming (Course Webpage), ETHZ](https://infsec.ethz.ch/education/ss2025/fmfp.html)
+
 
 ## IMP
 
