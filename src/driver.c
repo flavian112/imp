@@ -2,22 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include "interpreter.h"
 #include "repl.h"
 
+
 static void interpret_file(const char *path) {
-  hashmap_t context = hashmap_create();
-  exec_file(context, path);
-  context_print(context);
-  hashmap_free(context);
+  context_t context = context_create();
+  interp_file(context, path);
+  context_print_var_table(context);
+  context_free(context);
 }
 
 int main(int argc, char **argv) {
   int opt;
-  const char *script = NULL;
   while ((opt = getopt(argc, argv, "i:h")) != -1) {
     switch (opt){
-    case 'i':
+    case 'i': 
       interpret_file(optarg);
       return EXIT_SUCCESS;
     case 'h':

@@ -19,10 +19,13 @@ WHITESPACE  [ \t\r\n]+
 "do"            { return T_DO; }
 "var"           { return T_VAR; }
 "in"            { return T_IN; }
+"procedure"     { return T_PROC; }
+"begin"         { return T_BEGIN; }
 
 "("             { return T_LPAREN; }
 ")"             { return T_RPAREN; }
 ";"             { return T_SEM; }
+","             { return T_COM; }
 ":="            { return T_ASSIGN; }
 
 "+"             { return T_PLUS; }

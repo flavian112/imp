@@ -3,17 +3,22 @@
 
 
 #include "ast.h"
-#include "hash_map.h"
 
 
-void exec_stmt(hashmap_t context, ASTNode *node);
-void context_print(hashmap_t context);
+typedef struct Context *context_t;
 
-void context_set(hashmap_t context, const char *name, int value);
-int context_get(hashmap_t context, const char *name);
 
-int exec_file (hashmap_t context, const char *path);
-int exec_str (hashmap_t context, const char *str);
+context_t context_create(void);
+void context_free(context_t context);
+
+int context_get_var(context_t context, const char *name);
+void context_set_var(context_t context, const char *name, int value);
+void context_print_var_table(context_t context);
+void context_print_proc_table(context_t context);
+
+void interp_ast(context_t context, ASTNode *node);
+int interp_file (context_t context, const char *path);
+int interp_str (context_t context, const char *str);
 
 
 #endif

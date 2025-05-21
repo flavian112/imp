@@ -1,10 +1,14 @@
 #include "repl.h"
-#include "interpreter.h"
-#include <readline/readline.h>
-#include <readline/history.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#include "interpreter.h"
+
 
 static void print_help(void) {
   printf(
@@ -17,7 +21,7 @@ static void print_help(void) {
     "  %%help                   show this message\n");
 }
 
-static void repl_exec_command(hashmap_t context, const char *command) {
+static void repl_exec_command(context_t context, char *command) {
   char *cmd = strtok(command, " \t");
   if (strcmp(cmd, "%quit") == 0) {
     exit(EXIT_SUCCESS);
@@ -26,30 +30,30 @@ static void repl_exec_command(hashmap_t context, const char *command) {
   } else if (strcmp(cmd, "%run") == 0) {
     char *file = strtok(NULL, " \t");
     if (file) {
-      if (!exec_file(context, file)) context_print(context);
+      if (!interp_file(context, file)) context_print_var_table(context);
     } else {
       fprintf(stderr, "Usage: %%run <path/to/file.imp>\n");
     }
   } else if (strcmp(cmd, "%set") == 0) {
     char *var = strtok(NULL, " \t");
     char *val = strtok(NULL, " \t");
-    if (var && val) context_set(context, var, atoi(val));
+    if (var && val) context_set_var(context, var, atoi(val));
     else fprintf(stderr, "Usage: %%set <var> <val>\n");
   } else if (strcmp(cmd, "%print") == 0) {
     char *var = strtok(NULL, " \t");
-    if (var) printf("%s = %d\n", var, context_get(context, var));
-    else context_print(context);
+    if (var) printf("%s = %d\n", var, context_get_var(context, var));
+    else context_print_var_table(context);
   } else {
     fprintf(stderr, "Unknown command: %s\n", cmd);
   }
 }
 
-static void repl_exec_statement(hashmap_t context, const char *statement) {
-  if (!exec_str(context, statement)) context_print(context);
+static void repl_exec_statement(context_t context, const char *statement) {
+  if (!interp_str(context, statement)) context_print_var_table(context);
 }
 
 void repl(void) {
-  hashmap_t context = hashmap_create();
+  context_t context = context_create();
 
   char *line;
   print_help();
@@ -61,5 +65,5 @@ void repl(void) {
   }
   printf("\n");
 
-  hashmap_free(context);
+  context_free(context);
 }

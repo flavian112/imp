@@ -1,5 +1,5 @@
 #include "ast.h"
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -96,6 +96,39 @@ ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm) {
   return node;
 }
 
+ASTNode *ast_procdecl(const char *name, ASTNodeList *args, ASTNodeList *vargs, ASTNode *stm) {
+  ASTNode *node = new_node(NT_PROCDECL);
+  node->u.d_procdecl.name = strdup(name);
+  assert(node->u.d_procdecl.name);
+  node->u.d_procdecl.args = args;
+  node->u.d_procdecl.vargs = vargs;
+  node->u.d_procdecl.stm = stm;
+  return node;
+}
+
+ASTNode *ast_proccall(const char *name, ASTNodeList *args, ASTNodeList *vargs) {
+  ASTNode *node = new_node(NT_PROCCALL);
+  node->u.d_proccall.name = strdup(name);
+  assert(node->u.d_proccall.name);
+  node->u.d_proccall.args = args;
+  node->u.d_proccall.vargs = vargs;
+  return node;
+}
+
+ASTNodeList *ast_node_list(ASTNode *node, ASTNodeList *list) {
+  ASTNodeList *new_list = malloc(sizeof(ASTNodeList));
+  assert(new_list);
+  new_list->node = node;
+  new_list->next = list;
+  return new_list;
+}
+
+static void ast_free_node_list(ASTNodeList *list) {
+  if (!list) return;
+  ast_free(list->node);
+  ast_free_node_list(list->next);
+  free(list);
+}
 
 void ast_free(ASTNode *node) {
   if (!node) return;
@@ -144,6 +177,68 @@ void ast_free(ASTNode *node) {
       ast_free(node->u.d_let.aexp);
       ast_free(node->u.d_let.stm);
       break;
+    case NT_PROCDECL:
+      free(node->u.d_procdecl.name);
+      ast_free_node_list(node->u.d_procdecl.args);
+      ast_free_node_list(node->u.d_procdecl.vargs);
+      ast_free(node->u.d_procdecl.stm);
+      break;
+    case NT_PROCCALL:
+      free(node->u.d_proccall.name);
+      ast_free_node_list(node->u.d_proccall.args);
+      ast_free_node_list(node->u.d_proccall.vargs);
+      break;
+    default: assert(0);
   }
   free(node);
+}
+
+static ASTNodeList *ast_node_list_clone(ASTNodeList *list) {
+  if (!list) return NULL;
+  return ast_node_list(ast_clone(list->node), ast_node_list_clone(list->next));
+}
+
+ASTNode *ast_clone(ASTNode *node) {
+  if (!node) return NULL;
+  switch (node->type) {
+    case NT_SKIP: return ast_skip();
+    case NT_ASSIGN: return ast_assign(ast_clone(node->u.d_assign.var), ast_clone(node->u.d_assign.aexp));
+    case NT_SEQ: return ast_seq(ast_clone(node->u.d_seq.stm1), ast_clone(node->u.d_seq.stm2));
+    case NT_IF: return ast_if(
+      ast_clone(node->u.d_if.bexp),
+      ast_clone(node->u.d_if.stm1),
+      ast_clone(node->u.d_if.stm2));
+    case NT_WHILE: return ast_while(
+      ast_clone(node->u.d_while.bexp),
+      ast_clone(node->u.d_while.stm));
+    case NT_INT: return ast_int(node->u.d_int.val);
+    case NT_VAR: return ast_var(node->u.d_var.name);
+    case NT_AOP: return ast_aop(
+      node->u.d_aop.aop,
+      ast_clone(node->u.d_aop.aexp1),
+      ast_clone(node->u.d_aop.aexp2));
+    case NT_BOP: return ast_bop(
+      node->u.d_bop.bop,
+      ast_clone(node->u.d_bop.bexp1),
+      ast_clone(node->u.d_bop.bexp2));
+    case NT_NOT: return ast_not(ast_clone(node->u.d_not.bexp));
+    case NT_ROP: return ast_rop(
+      node->u.d_rop.rop,
+      ast_clone(node->u.d_rop.aexp1),
+      ast_clone(node->u.d_rop.aexp2));
+    case NT_LET: return ast_let(
+      ast_clone(node->u.d_let.var),
+      ast_clone(node->u.d_let.aexp),
+      ast_clone(node->u.d_let.stm));
+    case NT_PROCDECL: return ast_procdecl(
+      node->u.d_procdecl.name,
+      ast_node_list_clone(node->u.d_procdecl.args),
+      ast_node_list_clone(node->u.d_procdecl.vargs),
+      ast_clone(node->u.d_procdecl.stm));
+    case NT_PROCCALL: return ast_proccall(
+      node->u.d_proccall.name,
+      ast_node_list_clone(node->u.d_proccall.args),
+      ast_node_list_clone(node->u.d_proccall.vargs));
+    default: assert(0);
+  }
 }

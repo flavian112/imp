@@ -1,15 +1,17 @@
-#include "hash_map.h"
-#include <stdio.h>
+#include "hashmap.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+
 #define INITIAL_SIZE (16)
 #define LOAD_FACTOR_THRESHOLD (0.75)
 
+
 typedef struct Pair {
   char *key;
-  int value;
+  void *value;
   struct Pair *next;
 } Pair;
 
@@ -18,6 +20,13 @@ typedef struct HashMap {
   size_t size;
   size_t count;
 } HashMap;
+
+typedef struct HashMapKeys {
+  char **keys;
+  size_t count;
+  size_t index;
+} HashMapKeys;
+
 
 static unsigned int hash(const char *key, size_t size) {
   unsigned int hash_value = 0;
@@ -55,8 +64,8 @@ HashMap *hashmap_create(void) {
   return map;
 }
 
-void hashmap_insert(HashMap *map, const char *key, int value) {
-  int *old_value = hashmap_get(map, key);
+void hashmap_insert(HashMap *map, const char *key, void *value) {
+  void **old_value = hashmap_get(map, key);
   if (old_value) {
     *old_value = value;
     return;
@@ -73,7 +82,7 @@ void hashmap_insert(HashMap *map, const char *key, int value) {
   map->count++;
 }
 
-int *hashmap_get(HashMap *map, const char *key) {
+void **hashmap_get(HashMap *map, const char *key) {
   unsigned int index = hash(key, map->size);
   Pair *pair = map->table[index];
   while (pair) {
@@ -83,7 +92,7 @@ int *hashmap_get(HashMap *map, const char *key) {
   return NULL;
 }
 
-void hashmap_delete(HashMap *map, const char *key) {
+int hashmap_delete(HashMap *map, const char *key) {
   unsigned int index = hash(key, map->size);
   Pair *pair = map->table[index];
   Pair *prev = NULL;
@@ -94,11 +103,12 @@ void hashmap_delete(HashMap *map, const char *key) {
       free(pair->key);
       free(pair);
       map->count--;
-      return;
+      return 0;
     }
     prev = pair;
     pair = pair->next;
   }
+  return -1;
 }
 
 void hashmap_free(HashMap *map) {
@@ -115,7 +125,7 @@ void hashmap_free(HashMap *map) {
   free(map);
 }
 
-void hashmap_iterate(HashMap *map, void (*callback)(const char *key, int value)) {
+void hashmap_iterate(HashMap *map, void (*callback)(const char *key, void *value)) {
   for (size_t i = 0; i < map->size; ++i) {
     Pair *pair = map->table[i];
     while (pair) {
@@ -123,4 +133,37 @@ void hashmap_iterate(HashMap *map, void (*callback)(const char *key, int value))
       pair = pair->next;
     }
   }
+}
+
+HashMapKeys *hashmap_keys_create(HashMap *map) {
+  HashMapKeys *iter = malloc(sizeof(HashMapKeys));
+  assert(iter);
+  iter->keys = malloc(map->count * sizeof(char*));
+  assert(iter->keys);
+  iter->count = 0;
+  iter->index = 0;
+  for (size_t i = 0; i < map->size; ++i) {
+    Pair *pair = map->table[i];
+    while (pair) {
+      iter->keys[iter->count++] = strdup(pair->key);
+      pair = pair->next;
+    }
+  }
+  return iter;
+}
+
+const char *hashmap_keys_next(HashMapKeys *iter) {
+  if (iter->index < iter->count) {
+    return iter->keys[iter->index++];
+  }
+  return NULL;
+}
+
+void hashmap_keys_free(HashMapKeys *iter) {
+  if (!iter) return;
+  for (size_t i = 0; i < iter->count; ++i) {
+    free(iter->keys[i]);
+  }
+  free(iter->keys);
+  free(iter);
 }

@@ -15,9 +15,10 @@ void yyerror(const char *s) {
 
 
 %union {
-  int            num;
-  char           *id;
-  struct ASTNode *node;
+  int                num;
+  char               *id;
+  struct ASTNode     *node;
+  struct ASTNodeList *node_list;
 }
 
 %start prog
@@ -32,13 +33,12 @@ void yyerror(const char *s) {
 %left        T_PLUS T_MINUS
 %left        T_STAR
 %right       T_UMINUS
-%token       T_END T_IF T_THEN T_ELSE T_WHILE T_DO T_VAR T_IN
-%token       T_SKIP
+%token       T_SKIP T_END T_IF T_THEN T_ELSE T_WHILE T_DO T_VAR T_IN T_PROC T_BEGIN
 %token       T_ASSIGN
-%token       T_LPAREN T_RPAREN
-%token       T_SEM
+%token       T_LPAREN T_RPAREN T_COM T_SEM
 
-%type <node> prog stm var aexp bexp
+%type <node> prog stm var aexp bexp procd procc
+%type <node_list> args
 
 %%
 
@@ -64,6 +64,10 @@ stm   : T_SKIP
         { $$ = ast_while($2, $4); }
       | T_VAR var T_ASSIGN aexp T_IN stm T_END
         { $$ = ast_let($2, $4, $6); }
+      | procd
+        { $$ = $1; }
+      | procc
+        { $$ = $1; }
       ;
 
 var   : T_ID
@@ -112,4 +116,17 @@ bexp  : bexp T_OR bexp
         { $$ = ast_rop(ROP_EQ, ast_int(0), ast_int(1)); }
       ;
 
+args  : var
+        { $$ = ast_node_list($1, NULL); }
+      | args T_COM var
+        { $$ = ast_node_list($3, $1); }
+      ;
+
+procd : T_PROC T_ID T_LPAREN args T_SEM args T_RPAREN T_BEGIN stm T_END
+        { $$ = ast_procdecl($2, $4, $6, $9); }
+      ;
+
+procc : T_ID T_LPAREN args T_SEM args T_RPAREN
+        { $$ = ast_proccall($1, $3, $5); }
+      ;
 %%

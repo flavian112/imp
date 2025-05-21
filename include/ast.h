@@ -4,7 +4,8 @@
 
 typedef enum {
   NT_SKIP, NT_ASSIGN, NT_SEQ, NT_IF, NT_WHILE,
-  NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP, NT_LET
+  NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP, NT_LET,
+  NT_PROCDECL, NT_PROCCALL
 } NodeType;
 
 typedef enum { AOP_ADD, AOP_SUB, AOP_MUL } AOp;
@@ -25,8 +26,15 @@ typedef struct ASTNode {
     struct { struct ASTNode *bexp; } d_not;
     struct { ROp rop; struct ASTNode *aexp1, *aexp2; } d_rop;
     struct { struct ASTNode *var, *aexp, *stm; } d_let;
+    struct { char *name; struct ASTNodeList *args,  *vargs; struct ASTNode *stm; } d_procdecl;
+    struct { char *name; struct ASTNodeList *args,  *vargs; } d_proccall;
   } u;
 } ASTNode;
+
+typedef struct ASTNodeList {
+  ASTNode *node;
+  struct ASTNodeList *next;
+} ASTNodeList;
 
 
 ASTNode *ast_skip(void);
@@ -41,8 +49,14 @@ ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2);
 ASTNode *ast_not(ASTNode *bexp);
 ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2);
 ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm);
+ASTNode *ast_procdecl(const char *name, ASTNodeList *args, ASTNodeList *vargs, ASTNode *stm);
+ASTNode *ast_proccall(const char *name, ASTNodeList *args, ASTNodeList *vargs);
 
+
+ASTNodeList *ast_node_list(ASTNode *node, ASTNodeList *list);
+
+ASTNode *ast_clone(ASTNode *node);
 void ast_free(ASTNode *node);
 
-#endif
 
+#endif
