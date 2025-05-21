@@ -7,14 +7,14 @@
 #include <string.h>
 
 static void print_help(void) {
-  puts(
-    "IMP REPL (type IMP statements or commands starting with '%')\n"
+  printf(
+    "IMP REPL (type IMP statements or commands starting with '%%')\n"
     "Commands:\n"
-    "  %quit                   exit\n"
-    "  %run <path/to/file.imp> interpret program\n"
-    "  %set <var> <val>        set variable\n"
-    "  %print [<var>]          print variable, or all variables\n"
-    "  %help                   show this message\n");
+    "  %%quit                   exit\n"
+    "  %%run <path/to/file.imp> interpret program\n"
+    "  %%set <var> <val>        set variable\n"
+    "  %%print [<var>]          print variable, or all variables\n"
+    "  %%help                   show this message\n");
 }
 
 static void repl_exec_command(hashmap_t context, const char *command) {

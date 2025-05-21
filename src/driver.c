@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, 
         "Usage: %s [-i program.imp]\n"
         "  -i <program.imp>   interpret program and exit\n"
-        "  (no args)   start REPL\n",
+        "  (no args)          start REPL\n",
         argv[0]);
       return (opt == 'h') ? EXIT_SUCCESS : EXIT_FAILURE;
     }
