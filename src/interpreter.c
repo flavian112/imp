@@ -208,7 +208,7 @@ int interp_ast(Context *context, ASTNode *node) {
         fprintf(stderr, "Error: procedure %s already defined\n", name);
         return -1;
       }
-      ASTNode *procdecl = ast_clone(node);      
+      ASTNode *procdecl = ast_clone(node);
       context_set_proc(context, name, procdecl);
       return 0;
     }
