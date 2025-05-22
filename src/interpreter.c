@@ -120,6 +120,57 @@ static int eval_bexpr(Context *context, ASTNode *node) {
   }
 }
 
+static int interp_proccall(Context *context, ASTNode *node) {
+  char *name = node->u.d_proccall.name;
+  ASTNode *procdecl = context_get_proc(context, name);
+  if (!procdecl) {
+    fprintf(stderr, "Error: procedure %s not defined\n", name);
+    return -1;
+  }
+  ASTNodeList *caller_args = node->u.d_proccall.args;
+  ASTNodeList *callee_args = procdecl->u.d_procdecl.args;
+  Context *proc_context = context_create();
+  hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
+  const char *key;
+  while ((key = hashmap_keys_iter_next(iter)) != NULL) {
+    ASTNode *proc = context_get_proc(context, key);
+    context_set_proc(proc_context, key, ast_clone(proc));
+  }
+  hashmap_keys_iter_free(iter);
+  while (caller_args && callee_args) {
+    char *caller_arg_name = caller_args->node->u.d_var.name;
+    char *callee_arg_name = callee_args->node->u.d_var.name;
+    context_set_var(proc_context, callee_arg_name, context_get_var(context, caller_arg_name));
+    caller_args = caller_args->next;
+    callee_args = callee_args->next;
+  }
+  if (caller_args || callee_args) {
+    fprintf(stderr, "Error: procedure %s called with wrong number of value arguments\n", name);
+    context_free(proc_context);
+    return -1;
+  }
+  if (interp_ast(proc_context, procdecl->u.d_procdecl.stm)) {
+    context_free(proc_context);
+    return -1;
+  }
+  ASTNodeList *caller_vargs = node->u.d_proccall.vargs;
+  ASTNodeList *callee_vargs = procdecl->u.d_procdecl.vargs;
+  while (caller_vargs && callee_vargs) {
+    char *caller_varg_name = caller_vargs->node->u.d_var.name;
+    char *callee_varg_name = callee_vargs->node->u.d_var.name;
+    context_set_var(context, caller_varg_name, context_get_var(proc_context, callee_varg_name));
+    caller_vargs = caller_vargs->next;
+    callee_vargs = callee_vargs->next;
+  }
+  if (caller_vargs || callee_vargs) {
+    fprintf(stderr, "Error: procedure %s called with wrong number of variable arguments\n", name);
+    context_free(proc_context);
+    return -1;
+  }
+  context_free(proc_context);
+  return 0;
+}
+
 int interp_ast(Context *context, ASTNode *node) {
   switch (node->type) {
     case NT_SKIP: return 0;
@@ -162,50 +213,7 @@ int interp_ast(Context *context, ASTNode *node) {
       return 0;
     }
     case NT_PROCCALL: {
-      char *name = node->u.d_proccall.name;
-      ASTNode *procdecl = context_get_proc(context, name);
-      if (!procdecl) {
-        fprintf(stderr, "Error: procedure %s not defined\n", name);
-        return -1;
-      }
-      ASTNodeList *caller_args = node->u.d_proccall.args;
-      ASTNodeList *callee_args = procdecl->u.d_procdecl.args;
-      Context *proc_context = context_create();
-      hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
-      const char *key;
-      while ((key = hashmap_keys_iter_next(iter)) != NULL) {
-        ASTNode *proc = context_get_proc(context, key);
-        assert(proc);
-        context_set_proc(proc_context, key, ast_clone(proc));
-      }
-      hashmap_keys_iter_free(iter);
-      while (caller_args && callee_args) {
-        char *caller_arg_name = caller_args->node->u.d_var.name;
-        char *callee_arg_name = callee_args->node->u.d_var.name;
-        context_set_var(proc_context, callee_arg_name, context_get_var(context, caller_arg_name));
-        caller_args = caller_args->next;
-        callee_args = callee_args->next;
-      }
-      if (caller_args || callee_args) {
-        fprintf(stderr, "Error: procedure %s called with wrong number of arguments\n", name);
-        context_free(proc_context);
-        return -1;
-      }
-      if (interp_ast(proc_context, procdecl->u.d_procdecl.stm)) {
-        context_free(proc_context);
-        return -1;
-      }
-      ASTNodeList *caller_vargs = node->u.d_proccall.vargs;
-      ASTNodeList *callee_vargs = procdecl->u.d_procdecl.vargs;
-      while (caller_vargs && callee_vargs) {
-        char *caller_varg_name = caller_vargs->node->u.d_var.name;
-        char *callee_varg_name = callee_vargs->node->u.d_var.name;
-        context_set_var(context, caller_varg_name, context_get_var(proc_context, callee_varg_name));
-        caller_vargs = caller_vargs->next;
-        callee_vargs = callee_vargs->next;
-      }
-      context_free(proc_context);
-      return 0;
+      return interp_proccall(context, node);
     }
     default: assert(0);
   }
@@ -213,34 +221,34 @@ int interp_ast(Context *context, ASTNode *node) {
 
 int interp_file (Context *context, const char *path) {
   yyin = fopen(path, "r");
-  if (!yyin) return -1;
+  if (!yyin) {
+    return -1;
+  }
   yyrestart(yyin);
-  if (!yyparse()) {
-    if (interp_ast(context, ast_root)) {
-      ast_free(ast_root);
-      fclose(yyin);
-      return -1;
-    }
+  if (yyparse()) {
     ast_free(ast_root);
-  } else {
-    /* TODO: potential memory leak, when parsing fails*/
     fclose(yyin);
     return -1;
   }
+  if (interp_ast(context, ast_root)) {
+    ast_free(ast_root);
+    fclose(yyin);
+    return -1;
+  }
+  ast_free(ast_root);
   fclose(yyin);
   return 0;
 }
 
 int interp_str (Context *context, const char *str) {
   YY_BUFFER_STATE buf = yy_scan_string(str);
-  if (!yyparse()) {
-    if (interp_ast(context, ast_root)) {
-      ast_free(ast_root);
-      yy_delete_buffer(buf);
-      return -1;
-    }
+  if (yyparse()) {
     ast_free(ast_root);
-  } else {
+    yy_delete_buffer(buf);
+    return -1;
+  }
+  if (interp_ast(context, ast_root)) {
+    ast_free(ast_root);
     yy_delete_buffer(buf);
     return -1;
   }
