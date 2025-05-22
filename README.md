@@ -4,7 +4,7 @@ A small interpreter of the IMP programming language, written in *C*, with *flex*
 
 Currently, the core functionality of IMP is implemented, additionally, the *local variable extension*, and the *procedure extension* are also implemented. 
 
-There are some syntactic enhancements, such as the boolean constants `true` and `false`, omitting parenthesis around expressions and sequential composition, omitting the else block of an if statment, and the ability to add arbitrary many semicolons after each statement.
+There are some syntactic enhancements, such as the boolean constants `true` and `false`, omitting parenthesis around expressions and sequential composition, omitting the else block of an if statment, support for C-style comments of the form `/* ... */`, and the ability to add arbitrary many semicolons after each statement.
 
 
 ## Dependencies

@@ -1,11 +1,13 @@
-f1 := 0;
-f2 := 1;
+/* computes the n-th fibonacci number */
+
+fib := 0;
+fibnext := 1;
 n := 5;
 
 while n # 0 do
-  var tmp := f2 in
-    f2 := f1 + f2;
-    f1 := tmp;
+  var tmp := fibnext in
+    fibnext := fib + fibnext;
+    fib := tmp;
   end;
   n := n - 1;
 end;

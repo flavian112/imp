@@ -1,3 +1,4 @@
+/* computes n!, result is stored in r. */
 procedure factorial(n;r) begin
   if n <= 0 then
     r := 1;
