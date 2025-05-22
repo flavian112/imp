@@ -24,17 +24,15 @@ int main(int argc, char **argv) {
   while ((opt = getopt(argc, argv, "i:a:h")) != -1) {
     switch (opt) {
     case 'i': 
-      interpret_file(optarg);
-      return EXIT_SUCCESS;
+      return interpret_file(optarg) ? EXIT_FAILURE : EXIT_SUCCESS;
     case 'a':
-      print_ast_file(optarg);
-      return EXIT_SUCCESS;
+      return print_ast_file(optarg) ? EXIT_FAILURE : EXIT_SUCCESS;
     case 'h':
     default:
       fprintf(stderr, 
         "Usage: %s [ARGS]\n"
         "  (no args)          start REPL\n"
-        "  -i <program.imp>   interpret program and exit\n"
+        "  -i <program.imp>   interpret program\n"
         "  -a <program.imp>   print ast\n"
         "  -h                 print this message\n",
         argv[0]);

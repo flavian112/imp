@@ -34,7 +34,7 @@ All build artifacts are created in the build folder `./build`, including the imp
 ```
 Usage: imp [ARGS]
   (no args)          start REPL
-  -i <program.imp>   interpret program and exit
+  -i <program.imp>   interpret program
   -a <program.imp>   print ast
   -h                 print this message
 ```
@@ -44,12 +44,12 @@ REPL:
 ```
 IMP REPL (type IMP statements or commands starting with '%')
 Commands:
-  %quit                   exit
-  %run <path/to/file.imp> interpret program
-  %set <var> <val>        set variable
-  %print [<var>]          print variable, or all variables
-  %proc                   print declared procedures
-  %help                   show this message
+  %quit               exit
+  %run <program.imp>  interpret program
+  %set <var> <val>    set variable
+  %print [<var>]      print variable, or all variables
+  %procedures         list declared procedures
+  %help               show this message
 ```
 
 ## IMP

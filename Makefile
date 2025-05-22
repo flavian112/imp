@@ -53,7 +53,7 @@ $(LEXER_O): $(LEXER_C)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 example: $(TARGET)
-	./$(TARGET) -i example/example.imp
+	./$(TARGET) -i examples/example.imp
 
 repl: $(TARGET)
 	./$(TARGET)

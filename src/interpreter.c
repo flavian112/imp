@@ -92,8 +92,8 @@ void context_print_proc_table(Context *context) {
       vargs = vargs->next;
       if (vargs) printf(", ");
     }
+    printf(")\n");
   }
-  printf(")\n");
   hashmap_keys_iter_free(iter);
 }
 

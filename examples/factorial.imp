@@ -1,0 +1,9 @@
+procedure factorial(n;r) begin
+  if n <= 0 then
+    r := 1;
+  else
+    m := n - 1;
+    factorial(m;r);
+    r := r * n;
+  end;
+end;
