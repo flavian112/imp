@@ -7,11 +7,16 @@
 #include "repl.h"
 
 
-static void interpret_file(const char *path) {
+static int interpret_file(const char *path) {
   context_t context = context_create();
-  interp_file(context, path);
+  if (interp_file(context, path)) {
+    fprintf(stderr, "Error interpreting file: %s\n", path);
+    context_free(context);
+    return -1;
+  }
   context_print_var_table(context);
   context_free(context);
+  return 0;
 }
 
 int main(int argc, char **argv) {

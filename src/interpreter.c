@@ -20,6 +20,7 @@ typedef struct Context{
   hashmap_t proc_table;
 } Context;
 
+
 static ASTNode *context_get_proc(Context *context, const char *name) {
   ASTNode **procdecl = (ASTNode**)hashmap_get(context->proc_table, name);
   if (procdecl) return *procdecl;
@@ -119,47 +120,54 @@ static int eval_bexpr(Context *context, ASTNode *node) {
   }
 }
 
-void interp_ast(Context *context, ASTNode *node) {
+int interp_ast(Context *context, ASTNode *node) {
   switch (node->type) {
-    case NT_SKIP: return;
+    case NT_SKIP: return 0;
     case NT_ASSIGN: {
       char *name = node->u.d_assign.var->u.d_var.name;
       int val = eval_aexpr(context, node->u.d_assign.aexp);
       context_set_var(context, name, val);
-      return;
+      return 0;
     }
     case NT_SEQ:
-      interp_ast(context, node->u.d_seq.stm1);
-      interp_ast(context, node->u.d_seq.stm2);
-      return;
+      if (interp_ast(context, node->u.d_seq.stm1)) return -1;
+      if (interp_ast(context, node->u.d_seq.stm2)) return -1;
+      return 0;
     case NT_IF:
-      if (eval_bexpr(context, node->u.d_if.bexp)) interp_ast(context, node->u.d_if.stm1);
-      else interp_ast(context, node->u.d_if.stm2);
-      return;
+      if (eval_bexpr(context, node->u.d_if.bexp)) return interp_ast(context, node->u.d_if.stm1);
+      else return interp_ast(context, node->u.d_if.stm2);
     case NT_WHILE:
-      while (eval_bexpr(context, node->u.d_while.bexp))  interp_ast(context, node->u.d_while.stm);
-      return;
+      while (eval_bexpr(context, node->u.d_while.bexp)) {
+        if (interp_ast(context, node->u.d_while.stm)) return -1;
+      }
+      return 0;
     case NT_LET: {
       char *name = node->u.d_let.var->u.d_var.name;
       int old_val = context_get_var(context, name);
       int new_val = eval_aexpr(context, node->u.d_let.aexp);
       context_set_var(context, name, new_val);
-      interp_ast(context, node->u.d_let.stm);
+      int ret = interp_ast(context, node->u.d_let.stm);
       context_set_var(context, name, old_val);
-      return;
+      return ret;
     }
     case NT_PROCDECL: {
       char *name = node->u.d_procdecl.name;
-      ASTNode *procdecl = ast_clone(node);
       ASTNode *procdecl_old = context_get_proc(context, name);
-      if (procdecl_old) ast_free(procdecl_old);
+      if (procdecl_old) {
+        fprintf(stderr, "Error: procedure %s already defined\n", name);
+        return -1;
+      }
+      ASTNode *procdecl = ast_clone(node);      
       context_set_proc(context, name, procdecl);
-      return;
+      return 0;
     }
     case NT_PROCCALL: {
       char *name = node->u.d_proccall.name;
       ASTNode *procdecl = context_get_proc(context, name);
-      if (!procdecl) return;
+      if (!procdecl) {
+        fprintf(stderr, "Error: procedure %s not defined\n", name);
+        return -1;
+      }
       ASTNodeList *caller_args = node->u.d_proccall.args;
       ASTNodeList *callee_args = procdecl->u.d_procdecl.args;
       Context *proc_context = context_create();
@@ -178,7 +186,15 @@ void interp_ast(Context *context, ASTNode *node) {
         caller_args = caller_args->next;
         callee_args = callee_args->next;
       }
-      interp_ast(proc_context, procdecl->u.d_procdecl.stm);
+      if (caller_args || callee_args) {
+        fprintf(stderr, "Error: procedure %s called with wrong number of arguments\n", name);
+        context_free(proc_context);
+        return -1;
+      }
+      if (interp_ast(proc_context, procdecl->u.d_procdecl.stm)) {
+        context_free(proc_context);
+        return -1;
+      }
       ASTNodeList *caller_vargs = node->u.d_proccall.vargs;
       ASTNodeList *callee_vargs = procdecl->u.d_procdecl.vargs;
       while (caller_vargs && callee_vargs) {
@@ -189,7 +205,7 @@ void interp_ast(Context *context, ASTNode *node) {
         callee_vargs = callee_vargs->next;
       }
       context_free(proc_context);
-      return;
+      return 0;
     }
     default: assert(0);
   }
@@ -200,9 +216,14 @@ int interp_file (Context *context, const char *path) {
   if (!yyin) return -1;
   yyrestart(yyin);
   if (!yyparse()) {
-    interp_ast(context, ast_root);
+    if (interp_ast(context, ast_root)) {
+      ast_free(ast_root);
+      fclose(yyin);
+      return -1;
+    }
     ast_free(ast_root);
   } else {
+    /* TODO: potential memory leak, when parsing fails*/
     fclose(yyin);
     return -1;
   }
@@ -213,7 +234,11 @@ int interp_file (Context *context, const char *path) {
 int interp_str (Context *context, const char *str) {
   YY_BUFFER_STATE buf = yy_scan_string(str);
   if (!yyparse()) {
-    interp_ast(context, ast_root);
+    if (interp_ast(context, ast_root)) {
+      ast_free(ast_root);
+      yy_delete_buffer(buf);
+      return -1;
+    }
     ast_free(ast_root);
   } else {
     yy_delete_buffer(buf);

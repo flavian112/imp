@@ -50,6 +50,7 @@ static void repl_exec_command(context_t context, char *command) {
 
 static void repl_exec_statement(context_t context, const char *statement) {
   if (!interp_str(context, statement)) context_print_var_table(context);
+  else fprintf(stderr, "Error interpreting statement: %s\n", statement);
 }
 
 void repl(void) {
