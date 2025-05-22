@@ -18,6 +18,7 @@ static void print_help(void) {
     "  %%run <path/to/file.imp> interpret program\n"
     "  %%set <var> <val>        set variable\n"
     "  %%print [<var>]          print variable, or all variables\n"
+    "  %%proc                   print declared procedures\n"
     "  %%help                   show this message\n");
 }
 
@@ -43,6 +44,8 @@ static void repl_exec_command(context_t context, char *command) {
     char *var = strtok(NULL, " \t");
     if (var) printf("%s = %d\n", var, context_get_var(context, var));
     else context_print_var_table(context);
+  } else if (strcmp(cmd, "%proc") == 0) {
+    context_print_proc_table(context);
   } else {
     fprintf(stderr, "Unknown command: %s\n", cmd);
   }

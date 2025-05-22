@@ -73,6 +73,30 @@ void context_print_var_table(Context *context) {
   hashmap_keys_iter_free(iter);
 }
 
+void context_print_proc_table(Context *context) {
+  hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
+  const char *key;
+  while ((key = hashmap_keys_iter_next(iter)) != NULL) {
+    ASTNode *procdecl = context_get_proc(context, key);
+    printf("%s(", key);
+    ASTNodeList *args = procdecl->u.d_procdecl.args;
+    while (args) {
+      printf("%s", args->node->u.d_var.name);
+      args = args->next;
+      if (args) printf(", ");
+    }
+    printf("; ");
+    ASTNodeList *vargs = procdecl->u.d_procdecl.vargs;
+    while (vargs) {
+      printf("%s", vargs->node->u.d_var.name);
+      vargs = vargs->next;
+      if (vargs) printf(", ");
+    }
+  }
+  printf(")\n");
+  hashmap_keys_iter_free(iter);
+}
+
 static int eval_aexpr(Context *context, ASTNode *node) {
   switch (node->type) {
     case NT_INT: return node->u.d_int.val;
