@@ -1,7 +1,0 @@
-(y := 0;
-var x := 5 in
-  (while x < 10 do 
-    x := (x + 1)
-  end;
-  y := x)
-end)

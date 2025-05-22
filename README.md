@@ -1,14 +1,17 @@
 # IMP Interpreter
 
-A small interpreter of the IMP programming language, written in *C* with *flex* for lexing and *bison* for parsing.
-Currently the core functionality of IMP is implemented, additionally, the *local variable extension*, and the *procedure extension* also. Furthermore there are some syntactic enhancements, such as the boolean constants `true` and `false`, omitting parenthesis around expressions, and the ability to add arbitrary many semicolons after each statement.
+A small interpreter of the IMP programming language, written in *C*, with *flex* for lexing, and *bison* for parsing.
+
+Currently, the core functionality of IMP is implemented, additionally, the *local variable extension*, and the *procedure extension* are also implemented. 
+
+There are some syntactic enhancements, such as the boolean constants `true` and `false`, omitting parenthesis around expressions and sequential composition, omitting the else block of an if statment, and the ability to add arbitrary many semicolons after each statement.
 
 
 ## Dependencies
 
-- [flex](https://github.com/westes/flex)
-- [bison](https://www.gnu.org/software/bison)
-- [readline](https://tiswww.case.edu/php/chet/readline/rltop.html)
+- [flex](https://github.com/westes/flex) lexer generator
+- [bison](https://www.gnu.org/software/bison) parser generator
+- [readline](https://tiswww.case.edu/php/chet/readline/rltop.html) handling userinput for repl
 
 
 ## Resources
@@ -20,7 +23,7 @@ Currently the core functionality of IMP is implemented, additionally, the *local
 
 - `make all` to build interpreter.
 - `make repl` to run repl.
-- `make example` to interpret "example/example.imp".
+- `make example` to interpret "examples/example.imp".
 - `make clean` to remove build folder.
 
 All build artifacts are created in the build folder `./build`, including the imp binary (`./build/imp`).
@@ -36,7 +39,7 @@ Usage: imp [ARGS]
   -h                 print this message
 ```
 
-### REPL
+REPL:
 
 ```
 IMP REPL (type IMP statements or commands starting with '%')
@@ -51,9 +54,26 @@ Commands:
 
 ## IMP
 
+### Example
+
+```
+procedure factorial(n;r) begin
+  if n <= 0 then
+    r := 1;
+  else
+    m := n - 1;
+    factorial(m;r);
+    r := r * n;
+  end;
+end;
+
+n := 5;
+factorial(n;r);
+```
+
 ### Syntax
 
-[Syntax](/res/syntax.ebnf)
+ - [Syntax (Reference EBNF)](/res/syntax.ebnf) might not always accurately reflect all syntax rules. (See [parser.y](src/parser.y) for current implemented parsing).
 
 
 **Statement `<stm>`**
@@ -116,20 +136,3 @@ Boolean Expression `<bexp>`:
 **Identifier `<ident>`**
 
 - `[a-zA-Z][A-Za-z0-9]*`
-
-### Example
-
-```
-procedure factorial(n;r) begin
-  if n <= 0 then
-    r := 1;
-  else
-    m := n - 1;
-    factorial(m;r);
-    r := r * n;
-  end;
-end;
-
-n := 5;
-factorial(n;r);
-```
