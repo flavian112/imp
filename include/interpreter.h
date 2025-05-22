@@ -20,5 +20,7 @@ int interp_ast(context_t context, ASTNode *node);
 int interp_file (context_t context, const char *path);
 int interp_str (context_t context, const char *str);
 
+int print_ast_file (const char *path);
+
 
 #endif

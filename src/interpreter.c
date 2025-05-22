@@ -97,6 +97,143 @@ void context_print_proc_table(Context *context) {
   hashmap_keys_iter_free(iter);
 }
 
+void ast_print(ASTNode *node, int depth) {
+  int indent = depth * 2;
+  switch (node->type) {
+    case NT_SKIP: {
+      printf("%*sSKIP\n", indent, "");
+      break;
+    }
+    case NT_ASSIGN: {
+      printf("%*sASSIGN %s=%d\n", indent, "", 
+             node->u.d_assign.var->u.d_var.name,
+             node->u.d_assign.aexp->u.d_int.val);
+      break;
+    }
+    case NT_SEQ: {
+      ast_print(node->u.d_seq.stm1, depth);
+      printf("%*sSEQ\n", indent, "");
+      ast_print(node->u.d_seq.stm2, depth);
+      break;
+    }
+    case NT_IF: {
+      printf("%*sIF (", indent, "");
+      ast_print(node->u.d_if.bexp, 0);
+      printf(")\n");
+      ast_print(node->u.d_if.stm1, depth + 1);
+      printf("%*sELSE\n", indent, "");
+      ast_print(node->u.d_if.stm2, depth + 1);
+      break;
+    }
+    case NT_WHILE: {
+      printf("%*sWHILE (", indent, "");
+      ast_print(node->u.d_while.bexp, 0);
+      printf(")\n");
+      ast_print(node->u.d_while.stm, depth + 1);
+      break;
+    }
+    case NT_INT: {
+      printf("%d", node->u.d_int.val);
+      break;
+    }
+    case NT_VAR: {
+      printf("%s", node->u.d_var.name);
+      break;
+    }
+    case NT_AOP: {
+      printf("(");
+      ast_print(node->u.d_aop.aexp1, 0);
+      switch (node->u.d_aop.aop) {
+        case AOP_ADD: printf(" + "); break;
+        case AOP_SUB: printf(" - "); break;
+        case AOP_MUL: printf(" * "); break;
+        default: assert(0);
+      }
+      ast_print(node->u.d_aop.aexp2, 0);
+      printf(")");
+      break;
+    }
+    case NT_BOP: {
+      printf("(");
+      ast_print(node->u.d_bop.bexp1, 0);
+      switch (node->u.d_bop.bop) {
+        case BOP_AND: printf(" && "); break;
+        case BOP_OR:  printf(" || "); break;
+        default: assert(0);
+      }
+      ast_print(node->u.d_bop.bexp2, 0);
+      printf(")");
+      break;
+    }
+    case NT_NOT: {
+      printf("!");
+      ast_print(node->u.d_not.bexp, 0);
+      break;
+    }
+    case NT_ROP: {
+      printf("(");
+      ast_print(node->u.d_rop.aexp1, 0);
+      switch (node->u.d_rop.rop) {
+        case ROP_EQ: printf(" == "); break;
+        case ROP_NE: printf(" != "); break;
+        case ROP_LT: printf(" < "); break;
+        case ROP_LE: printf(" <= "); break;
+        case ROP_GT: printf(" > "); break;
+        case ROP_GE: printf(" >= "); break;
+        default: assert(0);
+      }
+      ast_print(node->u.d_rop.aexp2, 0);
+      printf(")");
+      break;
+    }
+    case NT_LET: {
+      printf("%*sLET %s = ", indent, "", node->u.d_let.var->u.d_var.name);
+      ast_print(node->u.d_let.aexp, 0);
+      printf("\n");
+      ast_print(node->u.d_let.stm, depth + 1);
+      break;
+    }
+    case NT_PROCDECL: {
+      printf("%*sPROC %s(", indent, "", node->u.d_procdecl.name);
+      ASTNodeList *args = node->u.d_procdecl.args;
+      while (args) {
+        printf("%s", args->node->u.d_var.name);
+        args = args->next;
+        if (args) printf(", ");
+      }
+      printf("; ");
+      ASTNodeList *vargs = node->u.d_procdecl.vargs;
+      while (vargs) {
+        printf("%s", vargs->node->u.d_var.name);
+        vargs = vargs->next;
+        if (vargs) printf(", ");
+      }
+      printf(")\n");
+      ast_print(node->u.d_procdecl.stm, depth + 1);
+      break;
+    }
+    case NT_PROCCALL: {
+      printf("%*sCALL %s(", indent, "", node->u.d_proccall.name);
+      ASTNodeList *args = node->u.d_proccall.args;
+      while (args) {
+        printf("%s", args->node->u.d_var.name);
+        args = args->next;
+        if (args) printf(", ");
+      }
+      printf("; ");
+      ASTNodeList *vargs = node->u.d_proccall.vargs;
+      while (vargs) {
+        printf("%s", vargs->node->u.d_var.name);
+        vargs = vargs->next;
+        if (vargs) printf(", ");
+      }
+      printf(")\n");
+      break;
+    }
+    default: assert(0);
+  }
+}
+
 static int eval_aexpr(Context *context, ASTNode *node) {
   switch (node->type) {
     case NT_INT: return node->u.d_int.val;
@@ -277,5 +414,22 @@ int interp_str (Context *context, const char *str) {
     return -1;
   }
   yy_delete_buffer(buf);
+  return 0;
+}
+
+int print_ast_file (const char *path) {
+  yyin = fopen(path, "r");
+  if (!yyin) {
+    return -1;
+  }
+  yyrestart(yyin);
+  if (yyparse()) {
+    ast_free(ast_root);
+    fclose(yyin);
+    return -1;
+  }
+  ast_print(ast_root, 0);
+  ast_free(ast_root);
+  fclose(yyin);
   return 0;
 }
