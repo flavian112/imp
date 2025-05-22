@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -22,6 +23,14 @@ static void print_help(void) {
     "  %%help               show this message\n");
 }
 
+static int is_valid_identifier(const char *var) {
+  if (!isalpha(var[0])) return 0;
+  for (int i = 1; var[i] != '\0'; ++i) {
+    if (!isalnum(var[i])) return 0;
+  }
+  return 1;
+}
+
 static void repl_exec_command(context_t context, char *command) {
   char *cmd = strtok(command, " \t");
   if (strcmp(cmd, "%quit") == 0) {
@@ -38,12 +47,22 @@ static void repl_exec_command(context_t context, char *command) {
   } else if (strcmp(cmd, "%set") == 0) {
     char *var = strtok(NULL, " \t");
     char *val = strtok(NULL, " \t");
-    if (var && val) context_set_var(context, var, atoi(val));
-    else fprintf(stderr, "Usage: %%set <var> <val>\n");
+    if (var && val) {
+      if (is_valid_identifier(var)) {
+        context_set_var(context, var, atoi(val));
+      } else {
+        fprintf(stderr, "Invalid variable name: %s\n", var);
+      }
+    } else fprintf(stderr, "Usage: %%set <var> <val>\n");
   } else if (strcmp(cmd, "%print") == 0) {
     char *var = strtok(NULL, " \t");
-    if (var) printf("%s = %d\n", var, context_get_var(context, var));
-    else context_print_var_table(context);
+    if (var) {
+      if (is_valid_identifier(var)) {
+        printf("%s = %d\n", var, context_get_var(context, var));
+      } else {
+        fprintf(stderr, "Invalid variable name: %s\n", var);
+      }
+    } else context_print_var_table(context);
   } else if (strcmp(cmd, "%procedures") == 0) {
     context_print_proc_table(context);
   } else {
