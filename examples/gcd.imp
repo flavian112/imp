@@ -1,0 +1,16 @@
+/* computes greatest common divisor (gcd) of a and b */
+procedure gcd(a, b; r) begin
+  if b = 0 then
+    r := a;
+  else
+    q := a;
+    while q >= b do
+      q := q - b;
+    end;
+    gcd(b, q; r);
+  end;
+end;
+
+x := 48;
+y := 18;
+gcd(x, y; result);

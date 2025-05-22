@@ -2,19 +2,51 @@
 #define AST_H
 
 
+/* AST Node Types */
 typedef enum {
-  NT_SKIP, NT_ASSIGN, NT_SEQ, NT_IF, NT_WHILE,
-  NT_INT, NT_VAR, NT_AOP, NT_BOP, NT_NOT, NT_ROP, NT_LET,
-  NT_PROCDECL, NT_PROCCALL
+  NT_SKIP,     /* nop */
+  NT_ASSIGN,   /* assignment */
+  NT_SEQ,      /* sequential composition */
+  NT_IF,       /* if-then-else block */
+  NT_WHILE,    /* while loop */
+  NT_INT,      /* integer constant */
+  NT_VAR,      /* integer variable */
+  NT_AOP,      /* arithmetic operation */
+  NT_BOP,      /* boolean operation */
+  NT_NOT,      /* boolean not */
+  NT_ROP,      /* relational operation */
+  NT_LET,      /* let-in-end block (i.e. local variable) */
+  NT_PROCDECL, /* procedure declaration */
+  NT_PROCCALL  /* procedure call */
 } NodeType;
 
-typedef enum { AOP_ADD, AOP_SUB, AOP_MUL } AOp;
-typedef enum { BOP_AND, BOP_OR } BOp;
-typedef enum { ROP_EQ, ROP_NE, ROP_LT, ROP_LE, ROP_GT, ROP_GE } ROp;
+/* Arithmetic Operations */
+typedef enum { 
+  AOP_ADD, /* addition */
+  AOP_SUB, /* subtraction */
+  AOP_MUL  /* multiplication */
+} AOp;
 
+/* Boolean Operations */
+typedef enum { 
+  BOP_AND, /* conjunction */
+  BOP_OR   /* disjunction */
+} BOp;
+
+/* Relational Operations */
+typedef enum { 
+  ROP_EQ, /* equals */
+  ROP_NE, /* not equals */
+  ROP_LT, /* less than */
+  ROP_LE, /* less or equals */
+  ROP_GT, /* greater than */
+  ROP_GE  /* greater or equals */
+} ROp;
+
+/* AST Node */
 typedef struct ASTNode {
   NodeType type;
-  union {
+  union { /* specific data for each node type */
     struct { struct ASTNode *var, *aexp; } d_assign;
     struct { struct ASTNode *stm1, *stm2; } d_seq;
     struct { struct ASTNode *bexp, *stm1, *stm2; } d_if;
@@ -31,12 +63,18 @@ typedef struct ASTNode {
   } u;
 } ASTNode;
 
+/* AST Node List (i.e. linked list of AST Nodes) */
 typedef struct ASTNodeList {
   ASTNode *node;
   struct ASTNodeList *next;
 } ASTNodeList;
 
 
+/* 
+  Creates new node of specific type.
+    The caller is responsible for freeing the top-most node, by calling ast_free.
+    Any strings passed to the node are copied (i.e. strdup) and will also automatically be freed.
+*/
 ASTNode *ast_skip(void);
 ASTNode *ast_assign(ASTNode *var, ASTNode *aexp);
 ASTNode *ast_seq(ASTNode *stm1, ASTNode *stm2);
@@ -52,10 +90,20 @@ ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm);
 ASTNode *ast_procdecl(const char *name, ASTNodeList *args, ASTNodeList *vargs, ASTNode *stm);
 ASTNode *ast_proccall(const char *name, ASTNodeList *args, ASTNodeList *vargs);
 
-
+/* 
+  Creates node list, 
+    Must be used in conjunction with a node that takes a list (i.e. ast_procdecl).
+    Will automatically be freed when the parent node is freed.
+  */
 ASTNodeList *ast_node_list(ASTNode *node, ASTNodeList *list);
 
+/* 
+  Creates a deep copy of a node and it's sub nodes (recursively).
+    caller is responsible for freeing top-most node.
+*/
 ASTNode *ast_clone(ASTNode *node);
+
+/* Recursively frees node and all sub nodes */
 void ast_free(ASTNode *node);
 
 
