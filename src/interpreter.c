@@ -20,6 +20,15 @@ typedef struct Context{
   hashmap_t proc_table;
 } Context;
 
+static ASTNode *context_get_proc(Context *context, const char *name) {
+  ASTNode **procdecl = (ASTNode**)hashmap_get(context->proc_table, name);
+  if (procdecl) return *procdecl;
+  return NULL;
+}
+
+static void context_set_proc(Context *context, const char *name, ASTNode *procdecl) {
+  hashmap_insert(context->proc_table, name, (void*)procdecl);
+}
 
 Context *context_create(void) {
   Context *context = malloc(sizeof(Context));
@@ -29,13 +38,16 @@ Context *context_create(void) {
   return context;
 }
 
-static void free_procdecl(const char *name, void *procdecl) {
-  ast_free((ASTNode*)procdecl);
-}
-
 void context_free(Context *context) {
   hashmap_free(context->var_table);
-  hashmap_iterate(context->proc_table, free_procdecl);
+  hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
+  const char *key;
+  while ((key = hashmap_keys_iter_next(iter)) != NULL) {
+    ASTNode *procdecl = context_get_proc(context, key);
+    assert(procdecl);
+    ast_free(procdecl);
+  }
+  hashmap_keys_iter_free(iter);
   hashmap_free(context->proc_table);
   free(context);
 }
@@ -50,22 +62,14 @@ void context_set_var(Context *context, const char *name, int val) {
   hashmap_insert(context->var_table, name, (void*)val);
 }
 
-static void print_var(const char *name, void *val) {
-  printf("%s = %d\n", name, (int)val);
-}
-
 void context_print_var_table(Context *context) {
-  hashmap_iterate(context->var_table, print_var);
-}
-
-static ASTNode *context_get_proc(Context *context, const char *name) {
-  ASTNode **procdecl = (ASTNode**)hashmap_get(context->proc_table, name);
-  if (procdecl) return *procdecl;
-  return NULL;
-}
-
-static void context_set_proc(Context *context, const char *name, ASTNode *procdecl) {
-  hashmap_insert(context->proc_table, name, (void*)procdecl);
+  hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->var_table);
+  const char *key;
+  while ((key = hashmap_keys_iter_next(iter)) != NULL) {
+    int val = context_get_var(context, key);
+    printf("%s = %d\n", key, val);
+  }
+  hashmap_keys_iter_free(iter);
 }
 
 static int eval_aexpr(Context *context, ASTNode *node) {
@@ -159,14 +163,14 @@ void interp_ast(Context *context, ASTNode *node) {
       ASTNodeList *caller_args = node->u.d_proccall.args;
       ASTNodeList *callee_args = procdecl->u.d_procdecl.args;
       Context *proc_context = context_create();
-      hashmap_keys_t keys = hashmap_keys_create(context->proc_table);
+      hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
       const char *key;
-      while ((key = hashmap_keys_next(keys)) != NULL) {
+      while ((key = hashmap_keys_iter_next(iter)) != NULL) {
         ASTNode *proc = context_get_proc(context, key);
         assert(proc);
         context_set_proc(proc_context, key, ast_clone(proc));
       }
-      hashmap_keys_free(keys);
+      hashmap_keys_iter_free(iter);
       while (caller_args && callee_args) {
         char *caller_arg_name = caller_args->node->u.d_var.name;
         char *callee_arg_name = callee_args->node->u.d_var.name;

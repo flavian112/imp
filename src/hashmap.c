@@ -21,11 +21,11 @@ typedef struct HashMap {
   size_t count;
 } HashMap;
 
-typedef struct HashMapKeys {
-  char **keys;
-  size_t count;
-  size_t index;
-} HashMapKeys;
+typedef struct HashMapKeysIter {
+  HashMap *map;
+  size_t bucket_index;
+  Pair *current;
+} HashMapKeysIter;
 
 
 static unsigned int hash(const char *key, size_t size) {
@@ -125,45 +125,36 @@ void hashmap_free(HashMap *map) {
   free(map);
 }
 
-void hashmap_iterate(HashMap *map, void (*callback)(const char *key, void *value)) {
-  for (size_t i = 0; i < map->size; ++i) {
-    Pair *pair = map->table[i];
-    while (pair) {
-      callback(pair->key, pair->value);
-      pair = pair->next;
-    }
-  }
-}
-
-HashMapKeys *hashmap_keys_create(HashMap *map) {
-  HashMapKeys *iter = malloc(sizeof(HashMapKeys));
+HashMapKeysIter *hashmap_keys_iter_create(HashMap *map) {
+  HashMapKeysIter *iter = (HashMapKeysIter*)malloc(sizeof(HashMapKeysIter));
   assert(iter);
-  iter->keys = malloc(map->count * sizeof(char*));
-  assert(iter->keys);
-  iter->count = 0;
-  iter->index = 0;
-  for (size_t i = 0; i < map->size; ++i) {
-    Pair *pair = map->table[i];
-    while (pair) {
-      iter->keys[iter->count++] = strdup(pair->key);
-      pair = pair->next;
-    }
+  iter->map = map;
+  iter->bucket_index = 0;
+  iter->current = NULL;
+  while (iter->bucket_index < map->size && map->table[iter->bucket_index] == NULL) {
+    iter->bucket_index++;
+  }
+  if (iter->bucket_index < map->size) {
+    iter->current = map->table[iter->bucket_index];
   }
   return iter;
 }
 
-const char *hashmap_keys_next(HashMapKeys *iter) {
-  if (iter->index < iter->count) {
-    return iter->keys[iter->index++];
+const char *hashmap_keys_iter_next(HashMapKeysIter *iter) {
+  if (!iter->current) return NULL;
+  const char *key = iter->current->key;
+  if (iter->current->next) {
+    iter->current = iter->current->next;
+  } else {
+    iter->bucket_index++;
+    while (iter->bucket_index < iter->map->size && iter->map->table[iter->bucket_index] == NULL) {
+      iter->bucket_index++;
+    }
+    iter->current = (iter->bucket_index < iter->map->size) ? iter->map->table[iter->bucket_index] : NULL;
   }
-  return NULL;
+  return key;
 }
 
-void hashmap_keys_free(HashMapKeys *iter) {
-  if (!iter) return;
-  for (size_t i = 0; i < iter->count; ++i) {
-    free(iter->keys[i]);
-  }
-  free(iter->keys);
+void hashmap_keys_iter_free(HashMapKeysIter *iter) {
   free(iter);
 }
