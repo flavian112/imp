@@ -105,9 +105,10 @@ void ast_print(ASTNode *node, int depth) {
       break;
     }
     case NT_ASSIGN: {
-      printf("%*sASSIGN %s=%d\n", indent, "", 
-             node->u.d_assign.var->u.d_var.name,
-             node->u.d_assign.aexp->u.d_int.val);
+      printf("%*sASSIGN %s=", indent, "", 
+             node->u.d_assign.var->u.d_var.name);
+      ast_print(node->u.d_assign.aexp, 0);
+      printf("\n");
       break;
     }
     case NT_SEQ: {
