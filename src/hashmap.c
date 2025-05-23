@@ -11,7 +11,7 @@
 
 typedef struct Pair {
   char *key;
-  void *value;
+  void *element;
   struct Pair *next;
 } Pair;
 
@@ -64,10 +64,10 @@ HashMap *hashmap_create(void) {
   return map;
 }
 
-void hashmap_insert(HashMap *map, const char *key, void *value) {
+void hashmap_insert(HashMap *map, const char *key, void *element) {
   void **old_value = hashmap_get(map, key);
   if (old_value) {
-    *old_value = value;
+    *old_value = element;
     return;
   }
   if ((float)map->count / map->size > LOAD_FACTOR_THRESHOLD) resize(map);
@@ -76,7 +76,7 @@ void hashmap_insert(HashMap *map, const char *key, void *value) {
   assert(new_pair);
   new_pair->key = strdup(key);
   assert(new_pair->key);
-  new_pair->value = value;
+  new_pair->element = element;
   new_pair->next = map->table[index];
   map->table[index] = new_pair;
   map->count++;
@@ -86,7 +86,7 @@ void **hashmap_get(HashMap *map, const char *key) {
   unsigned int index = hash(key, map->size);
   Pair *pair = map->table[index];
   while (pair) {
-    if (strcmp(pair->key, key) == 0) return &pair->value;
+    if (strcmp(pair->key, key) == 0) return &pair->element;
     pair = pair->next;
   }
   return NULL;

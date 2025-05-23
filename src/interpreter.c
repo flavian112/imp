@@ -9,7 +9,7 @@
 
 typedef void *YY_BUFFER_STATE;
 extern FILE *yyin;
-extern ASTNode *ast_root;
+extern IMP_ASTNode *ast_root;
 extern int yyparse(void);
 extern void yyrestart (FILE*);
 extern YY_BUFFER_STATE yy_scan_string(const char*);
@@ -21,13 +21,13 @@ typedef struct Context{
 } Context;
 
 
-static ASTNode *context_get_proc(Context *context, const char *name) {
-  ASTNode **procdecl = (ASTNode**)hashmap_get(context->proc_table, name);
+static IMP_ASTNode *context_get_proc(Context *context, const char *name) {
+  IMP_ASTNode **procdecl = (IMP_ASTNode**)hashmap_get(context->proc_table, name);
   if (procdecl) return *procdecl;
   return NULL;
 }
 
-static void context_set_proc(Context *context, const char *name, ASTNode *procdecl) {
+static void context_set_proc(Context *context, const char *name, IMP_ASTNode *procdecl) {
   hashmap_insert(context->proc_table, name, (void*)procdecl);
 }
 
@@ -44,9 +44,9 @@ void context_free(Context *context) {
   hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
   const char *key;
   while ((key = hashmap_keys_iter_next(iter)) != NULL) {
-    ASTNode *procdecl = context_get_proc(context, key);
+    IMP_ASTNode *procdecl = context_get_proc(context, key);
     assert(procdecl);
-    ast_free(procdecl);
+    imp_ast_free(procdecl);
   }
   hashmap_keys_iter_free(iter);
   hashmap_free(context->proc_table);
@@ -77,18 +77,18 @@ void context_print_proc_table(Context *context) {
   hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
   const char *key;
   while ((key = hashmap_keys_iter_next(iter)) != NULL) {
-    ASTNode *procdecl = context_get_proc(context, key);
+    IMP_ASTNode *procdecl = context_get_proc(context, key);
     printf("%s(", key);
-    ASTNodeList *args = procdecl->u.d_procdecl.args;
+    IMP_ASTNodeList *args = procdecl->data.proc_decl.val_args;
     while (args) {
-      printf("%s", args->node->u.d_var.name);
+      printf("%s", args->node->data.variable.name);
       args = args->next;
       if (args) printf(", ");
     }
     printf("; ");
-    ASTNodeList *vargs = procdecl->u.d_procdecl.vargs;
+    IMP_ASTNodeList *vargs = procdecl->data.proc_decl.var_args;
     while (vargs) {
-      printf("%s", vargs->node->u.d_var.name);
+      printf("%s", vargs->node->data.variable.name);
       vargs = vargs->next;
       if (vargs) printf(", ");
     }
@@ -97,134 +97,134 @@ void context_print_proc_table(Context *context) {
   hashmap_keys_iter_free(iter);
 }
 
-void ast_print(ASTNode *node, int depth) {
+void ast_print(IMP_ASTNode *node, int depth) {
   int indent = depth * 2;
   switch (node->type) {
-    case NT_SKIP: {
+    case IMP_AST_NT_SKIP: {
       printf("%*sSKIP\n", indent, "");
       break;
     }
-    case NT_ASSIGN: {
+    case IMP_AST_NT_ASSIGN: {
       printf("%*sASSIGN %s=", indent, "", 
-             node->u.d_assign.var->u.d_var.name);
-      ast_print(node->u.d_assign.aexp, 0);
+             node->data.assign.var->data.variable.name);
+      ast_print(node->data.assign.aexpr, 0);
       printf("\n");
       break;
     }
-    case NT_SEQ: {
-      ast_print(node->u.d_seq.stm1, depth);
+    case IMP_AST_NT_SEQ: {
+      ast_print(node->data.seq.fst_stmt, depth);
       printf("%*sSEQ\n", indent, "");
-      ast_print(node->u.d_seq.stm2, depth);
+      ast_print(node->data.seq.snd_stmt, depth);
       break;
     }
-    case NT_IF: {
+    case IMP_AST_NT_IF: {
       printf("%*sIF (", indent, "");
-      ast_print(node->u.d_if.bexp, 0);
+      ast_print(node->data.if_stmt.cond_bexpr, 0);
       printf(")\n");
-      ast_print(node->u.d_if.stm1, depth + 1);
+      ast_print(node->data.if_stmt.then_stmt, depth + 1);
       printf("%*sELSE\n", indent, "");
-      ast_print(node->u.d_if.stm2, depth + 1);
+      ast_print(node->data.if_stmt.else_stmt, depth + 1);
       break;
     }
-    case NT_WHILE: {
+    case IMP_AST_NT_WHILE: {
       printf("%*sWHILE (", indent, "");
-      ast_print(node->u.d_while.bexp, 0);
+      ast_print(node->data.while_stmt.cond_bexpr, 0);
       printf(")\n");
-      ast_print(node->u.d_while.stm, depth + 1);
+      ast_print(node->data.while_stmt.body_stmt, depth + 1);
       break;
     }
-    case NT_INT: {
-      printf("%d", node->u.d_int.val);
+    case IMP_AST_NT_INT: {
+      printf("%d", node->data.integer.val);
       break;
     }
-    case NT_VAR: {
-      printf("%s", node->u.d_var.name);
+    case IMP_AST_NT_VAR: {
+      printf("%s", node->data.variable.name);
       break;
     }
-    case NT_AOP: {
+    case IMP_AST_NT_AOP: {
       printf("(");
-      ast_print(node->u.d_aop.aexp1, 0);
-      switch (node->u.d_aop.aop) {
-        case AOP_ADD: printf(" + "); break;
-        case AOP_SUB: printf(" - "); break;
-        case AOP_MUL: printf(" * "); break;
+      ast_print(node->data.arith_op.l_aexpr, 0);
+      switch (node->data.arith_op.aopr) {
+        case IMP_AST_AOP_ADD: printf(" + "); break;
+        case IMP_AST_AOP_SUB: printf(" - "); break;
+        case IMP_AST_AOP_MUL: printf(" * "); break;
         default: assert(0);
       }
-      ast_print(node->u.d_aop.aexp2, 0);
+      ast_print(node->data.arith_op.r_aexpr, 0);
       printf(")");
       break;
     }
-    case NT_BOP: {
+    case IMP_AST_NT_BOP: {
       printf("(");
-      ast_print(node->u.d_bop.bexp1, 0);
-      switch (node->u.d_bop.bop) {
-        case BOP_AND: printf(" && "); break;
-        case BOP_OR:  printf(" || "); break;
+      ast_print(node->data.bool_op.l_bexpr, 0);
+      switch (node->data.bool_op.bopr) {
+        case IMP_AST_BOP_AND: printf(" && "); break;
+        case IMP_AST_BOP_OR:  printf(" || "); break;
         default: assert(0);
       }
-      ast_print(node->u.d_bop.bexp2, 0);
+      ast_print(node->data.bool_op.r_bexpr, 0);
       printf(")");
       break;
     }
-    case NT_NOT: {
+    case IMP_AST_NT_NOT: {
       printf("!");
-      ast_print(node->u.d_not.bexp, 0);
+      ast_print(node->data.bool_not.bexpr, 0);
       break;
     }
-    case NT_ROP: {
+    case IMP_AST_NT_ROP: {
       printf("(");
-      ast_print(node->u.d_rop.aexp1, 0);
-      switch (node->u.d_rop.rop) {
-        case ROP_EQ: printf(" == "); break;
-        case ROP_NE: printf(" != "); break;
-        case ROP_LT: printf(" < "); break;
-        case ROP_LE: printf(" <= "); break;
-        case ROP_GT: printf(" > "); break;
-        case ROP_GE: printf(" >= "); break;
+      ast_print(node->data.rel_op.l_aexpr, 0);
+      switch (node->data.rel_op.ropr) {
+        case IMP_AST_ROP_EQ: printf(" == "); break;
+        case IMP_AST_ROP_NE: printf(" != "); break;
+        case IMP_AST_ROP_LT: printf(" < "); break;
+        case IMP_AST_ROP_LE: printf(" <= "); break;
+        case IMP_AST_ROP_GT: printf(" > "); break;
+        case IMP_AST_ROP_GE: printf(" >= "); break;
         default: assert(0);
       }
-      ast_print(node->u.d_rop.aexp2, 0);
+      ast_print(node->data.rel_op.r_aexpr, 0);
       printf(")");
       break;
     }
-    case NT_LET: {
-      printf("%*sLET %s = ", indent, "", node->u.d_let.var->u.d_var.name);
-      ast_print(node->u.d_let.aexp, 0);
+    case IMP_AST_NT_LET: {
+      printf("%*sLET %s = ", indent, "", node->data.let_stmt.var->data.variable.name);
+      ast_print(node->data.let_stmt.aexpr, 0);
       printf("\n");
-      ast_print(node->u.d_let.stm, depth + 1);
+      ast_print(node->data.let_stmt.body_stmt, depth + 1);
       break;
     }
-    case NT_PROCDECL: {
-      printf("%*sPROC %s(", indent, "", node->u.d_procdecl.name);
-      ASTNodeList *args = node->u.d_procdecl.args;
+    case IMP_AST_NT_PROCDECL: {
+      printf("%*sPROC %s(", indent, "", node->data.proc_decl.name);
+      IMP_ASTNodeList *args = node->data.proc_decl.val_args;
       while (args) {
-        printf("%s", args->node->u.d_var.name);
+        printf("%s", args->node->data.variable.name);
         args = args->next;
         if (args) printf(", ");
       }
       printf("; ");
-      ASTNodeList *vargs = node->u.d_procdecl.vargs;
+      IMP_ASTNodeList *vargs = node->data.proc_decl.var_args;
       while (vargs) {
-        printf("%s", vargs->node->u.d_var.name);
+        printf("%s", vargs->node->data.variable.name);
         vargs = vargs->next;
         if (vargs) printf(", ");
       }
       printf(")\n");
-      ast_print(node->u.d_procdecl.stm, depth + 1);
+      ast_print(node->data.proc_decl.body_stmt, depth + 1);
       break;
     }
-    case NT_PROCCALL: {
-      printf("%*sCALL %s(", indent, "", node->u.d_proccall.name);
-      ASTNodeList *args = node->u.d_proccall.args;
+    case IMP_AST_NT_PROCCALL: {
+      printf("%*sCALL %s(", indent, "", node->data.proc_call.name);
+      IMP_ASTNodeList *args = node->data.proc_call.val_args;
       while (args) {
-        printf("%s", args->node->u.d_var.name);
+        printf("%s", args->node->data.variable.name);
         args = args->next;
         if (args) printf(", ");
       }
       printf("; ");
-      ASTNodeList *vargs = node->u.d_proccall.vargs;
+      IMP_ASTNodeList *vargs = node->data.proc_call.var_args;
       while (vargs) {
-        printf("%s", vargs->node->u.d_var.name);
+        printf("%s", vargs->node->data.variable.name);
         vargs = vargs->next;
         if (vargs) printf(", ");
       }
@@ -235,17 +235,17 @@ void ast_print(ASTNode *node, int depth) {
   }
 }
 
-static int eval_aexpr(Context *context, ASTNode *node) {
+static int eval_aexpr(Context *context, IMP_ASTNode *node) {
   switch (node->type) {
-    case NT_INT: return node->u.d_int.val;
-    case NT_VAR: return context_get_var(context, node->u.d_var.name);
-    case NT_AOP: {
-      int aexp1_val = eval_aexpr(context, node->u.d_aop.aexp1);
-      int aexp2_val = eval_aexpr(context, node->u.d_aop.aexp2);
-      switch (node->u.d_aop.aop) {
-        case AOP_ADD: return aexp1_val + aexp2_val;
-        case AOP_SUB: return aexp1_val - aexp2_val;
-        case AOP_MUL: return aexp1_val * aexp2_val;
+    case IMP_AST_NT_INT: return node->data.integer.val;
+    case IMP_AST_NT_VAR: return context_get_var(context, node->data.variable.name);
+    case IMP_AST_NT_AOP: {
+      int aexp1_val = eval_aexpr(context, node->data.arith_op.l_aexpr);
+      int aexp2_val = eval_aexpr(context, node->data.arith_op.r_aexpr);
+      switch (node->data.arith_op.aopr) {
+        case IMP_AST_AOP_ADD: return aexp1_val + aexp2_val;
+        case IMP_AST_AOP_SUB: return aexp1_val - aexp2_val;
+        case IMP_AST_AOP_MUL: return aexp1_val * aexp2_val;
         default: assert(0);
       }
     }
@@ -253,28 +253,28 @@ static int eval_aexpr(Context *context, ASTNode *node) {
   }
 }
 
-static int eval_bexpr(Context *context, ASTNode *node) {
+static int eval_bexpr(Context *context, IMP_ASTNode *node) {
   switch (node->type) {
-    case NT_BOP: {
-      int bexp1_val = eval_bexpr(context, node->u.d_bop.bexp1);
-      int bexp2_val = eval_bexpr(context, node->u.d_bop.bexp2);
-      switch (node->u.d_bop.bop) {
-        case BOP_AND: return bexp1_val && bexp2_val;
-        case BOP_OR:  return bexp1_val || bexp2_val;
+    case IMP_AST_NT_BOP: {
+      int bexp1_val = eval_bexpr(context, node->data.bool_op.l_bexpr);
+      int bexp2_val = eval_bexpr(context, node->data.bool_op.r_bexpr);
+      switch (node->data.bool_op.bopr) {
+        case IMP_AST_BOP_AND: return bexp1_val && bexp2_val;
+        case IMP_AST_BOP_OR:  return bexp1_val || bexp2_val;
         default: assert(0);
       }
     }
-    case NT_NOT: return !eval_bexpr(context, node->u.d_not.bexp);
-    case NT_ROP: {
-      int aexp1_val = eval_aexpr(context, node->u.d_rop.aexp1);
-      int aexp2_val = eval_aexpr(context, node->u.d_rop.aexp2);
-      switch (node->u.d_rop.rop) {
-        case ROP_EQ: return aexp1_val == aexp2_val;
-        case ROP_NE: return aexp1_val != aexp2_val;
-        case ROP_LT: return aexp1_val < aexp2_val;
-        case ROP_LE: return aexp1_val <= aexp2_val;
-        case ROP_GT: return aexp1_val > aexp2_val;
-        case ROP_GE: return aexp1_val >= aexp2_val;
+    case IMP_AST_NT_NOT: return !eval_bexpr(context, node->data.bool_not.bexpr);
+    case IMP_AST_NT_ROP: {
+      int aexp1_val = eval_aexpr(context, node->data.rel_op.l_aexpr);
+      int aexp2_val = eval_aexpr(context, node->data.rel_op.r_aexpr);
+      switch (node->data.rel_op.ropr) {
+        case IMP_AST_ROP_EQ: return aexp1_val == aexp2_val;
+        case IMP_AST_ROP_NE: return aexp1_val != aexp2_val;
+        case IMP_AST_ROP_LT: return aexp1_val < aexp2_val;
+        case IMP_AST_ROP_LE: return aexp1_val <= aexp2_val;
+        case IMP_AST_ROP_GT: return aexp1_val > aexp2_val;
+        case IMP_AST_ROP_GE: return aexp1_val >= aexp2_val;
         default: assert(0);
       }
     }
@@ -282,26 +282,26 @@ static int eval_bexpr(Context *context, ASTNode *node) {
   }
 }
 
-static int interp_proccall(Context *context, ASTNode *node) {
-  char *name = node->u.d_proccall.name;
-  ASTNode *procdecl = context_get_proc(context, name);
+static int interp_proccall(Context *context, IMP_ASTNode *node) {
+  const char *name = node->data.proc_call.name;
+  IMP_ASTNode *procdecl = context_get_proc(context, name);
   if (!procdecl) {
     fprintf(stderr, "Error: procedure %s not defined\n", name);
     return -1;
   }
-  ASTNodeList *caller_args = node->u.d_proccall.args;
-  ASTNodeList *callee_args = procdecl->u.d_procdecl.args;
+  IMP_ASTNodeList *caller_args = node->data.proc_call.val_args;
+  IMP_ASTNodeList *callee_args = procdecl->data.proc_decl.val_args;
   Context *proc_context = context_create();
   hashmap_keys_iter_t iter = hashmap_keys_iter_create(context->proc_table);
   const char *key;
   while ((key = hashmap_keys_iter_next(iter)) != NULL) {
-    ASTNode *proc = context_get_proc(context, key);
-    context_set_proc(proc_context, key, ast_clone(proc));
+    IMP_ASTNode *proc = context_get_proc(context, key);
+    context_set_proc(proc_context, key, imp_ast_clone(proc));
   }
   hashmap_keys_iter_free(iter);
   while (caller_args && callee_args) {
-    char *caller_arg_name = caller_args->node->u.d_var.name;
-    char *callee_arg_name = callee_args->node->u.d_var.name;
+    const char *caller_arg_name = caller_args->node->data.variable.name;
+    const char *callee_arg_name = callee_args->node->data.variable.name;
     context_set_var(proc_context, callee_arg_name, context_get_var(context, caller_arg_name));
     caller_args = caller_args->next;
     callee_args = callee_args->next;
@@ -311,15 +311,15 @@ static int interp_proccall(Context *context, ASTNode *node) {
     context_free(proc_context);
     return -1;
   }
-  if (interp_ast(proc_context, procdecl->u.d_procdecl.stm)) {
+  if (interp_ast(proc_context, procdecl->data.proc_decl.body_stmt)) {
     context_free(proc_context);
     return -1;
   }
-  ASTNodeList *caller_vargs = node->u.d_proccall.vargs;
-  ASTNodeList *callee_vargs = procdecl->u.d_procdecl.vargs;
+  IMP_ASTNodeList *caller_vargs = node->data.proc_call.var_args;
+  IMP_ASTNodeList *callee_vargs = procdecl->data.proc_decl.var_args;
   while (caller_vargs && callee_vargs) {
-    char *caller_varg_name = caller_vargs->node->u.d_var.name;
-    char *callee_varg_name = callee_vargs->node->u.d_var.name;
+    const char *caller_varg_name = caller_vargs->node->data.variable.name;
+    const char *callee_varg_name = callee_vargs->node->data.variable.name;
     context_set_var(context, caller_varg_name, context_get_var(proc_context, callee_varg_name));
     caller_vargs = caller_vargs->next;
     callee_vargs = callee_vargs->next;
@@ -333,48 +333,48 @@ static int interp_proccall(Context *context, ASTNode *node) {
   return 0;
 }
 
-int interp_ast(Context *context, ASTNode *node) {
+int interp_ast(Context *context, IMP_ASTNode *node) {
   switch (node->type) {
-    case NT_SKIP: return 0;
-    case NT_ASSIGN: {
-      char *name = node->u.d_assign.var->u.d_var.name;
-      int val = eval_aexpr(context, node->u.d_assign.aexp);
+    case IMP_AST_NT_SKIP: return 0;
+    case IMP_AST_NT_ASSIGN: {
+      const char *name = node->data.assign.var->data.variable.name;
+      int val = eval_aexpr(context, node->data.assign.aexpr);
       context_set_var(context, name, val);
       return 0;
     }
-    case NT_SEQ:
-      if (interp_ast(context, node->u.d_seq.stm1)) return -1;
-      if (interp_ast(context, node->u.d_seq.stm2)) return -1;
+    case IMP_AST_NT_SEQ:
+      if (interp_ast(context, node->data.seq.fst_stmt)) return -1;
+      if (interp_ast(context, node->data.seq.snd_stmt)) return -1;
       return 0;
-    case NT_IF:
-      if (eval_bexpr(context, node->u.d_if.bexp)) return interp_ast(context, node->u.d_if.stm1);
-      else return interp_ast(context, node->u.d_if.stm2);
-    case NT_WHILE:
-      while (eval_bexpr(context, node->u.d_while.bexp)) {
-        if (interp_ast(context, node->u.d_while.stm)) return -1;
+    case IMP_AST_NT_IF:
+      if (eval_bexpr(context, node->data.if_stmt.cond_bexpr)) return interp_ast(context, node->data.if_stmt.then_stmt);
+      else return interp_ast(context, node->data.if_stmt.else_stmt);
+    case IMP_AST_NT_WHILE:
+      while (eval_bexpr(context, node->data.while_stmt.cond_bexpr)) {
+        if (interp_ast(context, node->data.while_stmt.body_stmt)) return -1;
       }
       return 0;
-    case NT_LET: {
-      char *name = node->u.d_let.var->u.d_var.name;
+    case IMP_AST_NT_LET: {
+      const char *name = node->data.let_stmt.var->data.variable.name;
       int old_val = context_get_var(context, name);
-      int new_val = eval_aexpr(context, node->u.d_let.aexp);
+      int new_val = eval_aexpr(context, node->data.let_stmt.aexpr);
       context_set_var(context, name, new_val);
-      int ret = interp_ast(context, node->u.d_let.stm);
+      int ret = interp_ast(context, node->data.let_stmt.body_stmt);
       context_set_var(context, name, old_val);
       return ret;
     }
-    case NT_PROCDECL: {
-      char *name = node->u.d_procdecl.name;
-      ASTNode *procdecl_old = context_get_proc(context, name);
+    case IMP_AST_NT_PROCDECL: {
+      const char *name = node->data.proc_decl.name;
+      IMP_ASTNode *procdecl_old = context_get_proc(context, name);
       if (procdecl_old) {
         fprintf(stderr, "Error: procedure %s already defined\n", name);
         return -1;
       }
-      ASTNode *procdecl = ast_clone(node);
+      IMP_ASTNode *procdecl = imp_ast_clone(node);
       context_set_proc(context, name, procdecl);
       return 0;
     }
-    case NT_PROCCALL: {
+    case IMP_AST_NT_PROCCALL: {
       return interp_proccall(context, node);
     }
     default: assert(0);
@@ -388,16 +388,16 @@ int interp_file (Context *context, const char *path) {
   }
   yyrestart(yyin);
   if (yyparse()) {
-    ast_free(ast_root);
+    imp_ast_free(ast_root);
     fclose(yyin);
     return -1;
   }
   if (interp_ast(context, ast_root)) {
-    ast_free(ast_root);
+    imp_ast_free(ast_root);
     fclose(yyin);
     return -1;
   }
-  ast_free(ast_root);
+  imp_ast_free(ast_root);
   fclose(yyin);
   return 0;
 }
@@ -405,12 +405,12 @@ int interp_file (Context *context, const char *path) {
 int interp_str (Context *context, const char *str) {
   YY_BUFFER_STATE buf = yy_scan_string(str);
   if (yyparse()) {
-    ast_free(ast_root);
+    imp_ast_free(ast_root);
     yy_delete_buffer(buf);
     return -1;
   }
   if (interp_ast(context, ast_root)) {
-    ast_free(ast_root);
+    imp_ast_free(ast_root);
     yy_delete_buffer(buf);
     return -1;
   }
@@ -425,12 +425,12 @@ int print_ast_file (const char *path) {
   }
   yyrestart(yyin);
   if (yyparse()) {
-    ast_free(ast_root);
+    imp_ast_free(ast_root);
     fclose(yyin);
     return -1;
   }
   ast_print(ast_root, 0);
-  ast_free(ast_root);
+  imp_ast_free(ast_root);
   fclose(yyin);
   return 0;
 }

@@ -7,6 +7,7 @@ typedef struct HashMap *hashmap_t;
 /* Hashmap Key Iterator Handle */
 typedef struct HashMapKeysIter *hashmap_keys_iter_t;
 
+
 /* 
   Creates hashmap that maps char* to void*.
     Keys are copied, and will be freed when the hashmap is freed.
@@ -31,7 +32,7 @@ void **hashmap_get(hashmap_t map, const char *key);
   Inserts element with given key.
     If key already exists, the old element is replaced (caller is responsible for freeing beforehand).
 */
-void hashmap_insert(hashmap_t map, const char *key, void *value);
+void hashmap_insert(hashmap_t map, const char *key, void *element);
 
 /* 
   Deletes element with given key.

@@ -16,7 +16,7 @@ void context_set_var(context_t context, const char *name, int value);
 void context_print_var_table(context_t context);
 void context_print_proc_table(context_t context);
 
-int interp_ast(context_t context, ASTNode *node);
+int interp_ast(context_t context, IMP_ASTNode *node);
 int interp_file (context_t context, const char *path);
 int interp_str (context_t context, const char *str);
 

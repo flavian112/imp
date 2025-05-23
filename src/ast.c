@@ -5,240 +5,245 @@
 #include <assert.h>
 
 
-static ASTNode *new_node(NodeType type) {
-  ASTNode *node = malloc(sizeof(ASTNode));
-  assert(node);
+static IMP_ASTNode *ast_create(IMP_ASTNodeType type) {
+  IMP_ASTNode *node = malloc(sizeof(IMP_ASTNode));
+  assert(node && "Memory allocation failed");
   node->type = type;
   return node;
 }
 
-ASTNode *ast_skip(void) {
-  return new_node(NT_SKIP);
+static IMP_ASTNodeList *ast_list_clone(IMP_ASTNodeList *list) {
+  if (!list) return NULL;
+  return imp_ast_list(imp_ast_clone(list->node), ast_list_clone(list->next));
 }
 
-ASTNode *ast_assign(ASTNode *var, ASTNode *aexp) {
-  ASTNode *node = new_node(NT_ASSIGN);
-  node->u.d_assign.var = var;
-  node->u.d_assign.aexp = aexp;
+IMP_ASTNode *imp_ast_skip(void) {
+  return ast_create(IMP_AST_NT_SKIP);
+}
+
+IMP_ASTNode *imp_ast_assign(IMP_ASTNode *var, IMP_ASTNode *aexpr) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_ASSIGN);
+  node->data.assign.var = var;
+  node->data.assign.aexpr = aexpr;
   return node;
 }
 
-ASTNode *ast_seq(ASTNode *stm1, ASTNode *stm2) {
-  ASTNode *node = new_node(NT_SEQ);
-  node->u.d_seq.stm1 = stm1;
-  node->u.d_seq.stm2 = stm2;
+IMP_ASTNode *imp_ast_seq(IMP_ASTNode *fst_stmt, IMP_ASTNode *snd_stmt) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_SEQ);
+  node->data.seq.fst_stmt = fst_stmt;
+  node->data.seq.snd_stmt = snd_stmt;
   return node;
 }
 
-ASTNode *ast_if(ASTNode *bexp, ASTNode *stm1, ASTNode *stm2) {
-  ASTNode *node = new_node(NT_IF);
-  node->u.d_if.bexp = bexp;
-  node->u.d_if.stm1 = stm1;
-  node->u.d_if.stm2 = stm2;
+IMP_ASTNode *imp_ast_if(IMP_ASTNode *cond_bexpr, IMP_ASTNode *then_stmt, IMP_ASTNode *else_stmt) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_IF);
+  node->data.if_stmt.cond_bexpr = cond_bexpr;
+  node->data.if_stmt.then_stmt = then_stmt;
+  node->data.if_stmt.else_stmt = else_stmt;
   return node;
 }
 
-ASTNode *ast_while(ASTNode *bexp, ASTNode *stm) {
-  ASTNode *node = new_node(NT_WHILE);
-  node->u.d_while.bexp = bexp;
-  node->u.d_while.stm = stm;
+IMP_ASTNode *imp_ast_while(IMP_ASTNode *cond_bexpr, IMP_ASTNode *body_stmt) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_WHILE);
+  node->data.while_stmt.cond_bexpr = cond_bexpr;
+  node->data.while_stmt.body_stmt = body_stmt;
   return node;
 }
 
-ASTNode *ast_int(int val) {
-  ASTNode *node = new_node(NT_INT);
-  node->u.d_int.val = val;
+IMP_ASTNode *imp_ast_int(int val) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_INT);
+  node->data.integer.val = val;
   return node;
 }
 
-ASTNode *ast_var(char *name) {
-  ASTNode *node = new_node(NT_VAR);
-  node->u.d_var.name = strdup(name);
-  assert(node->u.d_var.name);
+IMP_ASTNode *imp_ast_var(const char *name) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_VAR);
+  node->data.variable.name = strdup(name);
+  assert(node->data.variable.name && "Memory allocation failed");
   return node;
 }
 
-ASTNode *ast_aop(AOp aop, ASTNode *aexp1, ASTNode *aexp2) {
-  ASTNode *node = new_node(NT_AOP);
-  node->u.d_aop.aexp1 = aexp1;
-  node->u.d_aop.aexp2 = aexp2;
-  node->u.d_aop.aop = aop;
+IMP_ASTNode *imp_ast_aop(IMP_ASTArithmeticOperator aopr, IMP_ASTNode *l_aexpr, IMP_ASTNode *r_aexpr) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_AOP);
+  node->data.arith_op.aopr = aopr;
+  node->data.arith_op.l_aexpr = l_aexpr;
+  node->data.arith_op.r_aexpr = r_aexpr;
   return node;
 }
 
-ASTNode *ast_bop(BOp bop, ASTNode *bexp1, ASTNode *bexp2) {
-  ASTNode *node = new_node(NT_BOP);
-  node->u.d_bop.bexp1 = bexp1;
-  node->u.d_bop.bexp2 = bexp2;
-  node->u.d_bop.bop = bop;
+IMP_ASTNode *imp_ast_bop(IMP_ASTBooleanOperator bopr, IMP_ASTNode *l_bexpr, IMP_ASTNode *r_bexpr) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_BOP);
+  node->data.bool_op.bopr = bopr;
+  node->data.bool_op.l_bexpr = l_bexpr;
+  node->data.bool_op.r_bexpr = r_bexpr;
   return node;
 }
 
-ASTNode *ast_not(ASTNode *bexp) {
-  ASTNode *node = new_node(NT_NOT);
-  node->u.d_not.bexp = bexp;
+IMP_ASTNode *imp_ast_not(IMP_ASTNode *bexpr) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_NOT);
+  node->data.bool_not.bexpr = bexpr;
   return node;
 }
 
-ASTNode *ast_rop(ROp rop, ASTNode *aexp1, ASTNode *aexp2) {
-  ASTNode *node = new_node(NT_ROP);
-  node->u.d_rop.aexp1 = aexp1;
-  node->u.d_rop.aexp2 = aexp2;
-  node->u.d_rop.rop = rop;
+IMP_ASTNode *imp_ast_rop(IMP_ASTRelationalOperator ropr, IMP_ASTNode *l_aexpr, IMP_ASTNode *r_aexpr) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_ROP);
+  node->data.rel_op.ropr = ropr;
+  node->data.rel_op.l_aexpr = l_aexpr;
+  node->data.rel_op.r_aexpr = r_aexpr;
   return node;
 }
 
-ASTNode *ast_let(ASTNode *var, ASTNode *aexp, ASTNode *stm) {
-  ASTNode *node = new_node(NT_LET);
-  node->u.d_let.var = var;
-  node->u.d_let.aexp = aexp;
-  node->u.d_let.stm = stm;
+IMP_ASTNode *imp_ast_let(IMP_ASTNode *var, IMP_ASTNode *aexpr, IMP_ASTNode *body_stmt) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_LET);
+  node->data.let_stmt.var = var;
+  node->data.let_stmt.aexpr = aexpr;
+  node->data.let_stmt.body_stmt = body_stmt;
   return node;
 }
 
-ASTNode *ast_procdecl(const char *name, ASTNodeList *args, ASTNodeList *vargs, ASTNode *stm) {
-  ASTNode *node = new_node(NT_PROCDECL);
-  node->u.d_procdecl.name = strdup(name);
-  assert(node->u.d_procdecl.name);
-  node->u.d_procdecl.args = args;
-  node->u.d_procdecl.vargs = vargs;
-  node->u.d_procdecl.stm = stm;
+IMP_ASTNode *imp_ast_procdecl(const char *name, IMP_ASTNodeList *val_args, IMP_ASTNodeList *var_args, IMP_ASTNode *body_stmt) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_PROCDECL);
+  node->data.proc_decl.name = strdup(name);
+  assert(node->data.proc_decl.name && "Memory allocation failed");
+  node->data.proc_decl.val_args = val_args;
+  node->data.proc_decl.var_args = var_args;
+  node->data.proc_decl.body_stmt = body_stmt;
   return node;
 }
 
-ASTNode *ast_proccall(const char *name, ASTNodeList *args, ASTNodeList *vargs) {
-  ASTNode *node = new_node(NT_PROCCALL);
-  node->u.d_proccall.name = strdup(name);
-  assert(node->u.d_proccall.name);
-  node->u.d_proccall.args = args;
-  node->u.d_proccall.vargs = vargs;
+IMP_ASTNode *imp_ast_proccall(const char *name, IMP_ASTNodeList *val_args, IMP_ASTNodeList *var_args) {
+  IMP_ASTNode *node = ast_create(IMP_AST_NT_PROCCALL);
+  node->data.proc_call.name = strdup(name);
+  assert(node->data.proc_call.name && "Memory allocation failed");
+  node->data.proc_call.val_args = val_args;
+  node->data.proc_call.var_args = var_args;
   return node;
 }
 
-ASTNodeList *ast_node_list(ASTNode *node, ASTNodeList *list) {
-  ASTNodeList *new_list = malloc(sizeof(ASTNodeList));
-  assert(new_list);
+IMP_ASTNode *imp_ast_clone(const IMP_ASTNode *node) {
+  if (!node) return NULL;
+  switch (node->type) {
+    case IMP_AST_NT_SKIP: return imp_ast_skip();
+    case IMP_AST_NT_ASSIGN: return imp_ast_assign(
+      imp_ast_clone(node->data.assign.var), 
+      imp_ast_clone(node->data.assign.aexpr));
+    case IMP_AST_NT_SEQ: return imp_ast_seq(
+      imp_ast_clone(node->data.seq.fst_stmt), 
+      imp_ast_clone(node->data.seq.snd_stmt));
+    case IMP_AST_NT_IF: return imp_ast_if(
+      imp_ast_clone(node->data.if_stmt.cond_bexpr),
+      imp_ast_clone(node->data.if_stmt.then_stmt),
+      imp_ast_clone(node->data.if_stmt.else_stmt));
+    case IMP_AST_NT_WHILE: return imp_ast_while(
+      imp_ast_clone(node->data.while_stmt.cond_bexpr),
+      imp_ast_clone(node->data.while_stmt.body_stmt));
+    case IMP_AST_NT_INT: return imp_ast_int(node->data.integer.val);
+    case IMP_AST_NT_VAR: return imp_ast_var(node->data.variable.name);
+    case IMP_AST_NT_AOP: return imp_ast_aop(
+      node->data.arith_op.aopr,
+      imp_ast_clone(node->data.arith_op.l_aexpr),
+      imp_ast_clone(node->data.arith_op.r_aexpr));
+    case IMP_AST_NT_BOP: return imp_ast_bop(
+      node->data.bool_op.bopr,
+      imp_ast_clone(node->data.bool_op.l_bexpr),
+      imp_ast_clone(node->data.bool_op.r_bexpr));
+    case IMP_AST_NT_NOT: return imp_ast_not(
+      imp_ast_clone(node->data.bool_not.bexpr));
+    case IMP_AST_NT_ROP: return imp_ast_rop(
+      node->data.rel_op.ropr,
+      imp_ast_clone(node->data.rel_op.l_aexpr),
+      imp_ast_clone(node->data.rel_op.r_aexpr));
+    case IMP_AST_NT_LET: return imp_ast_let(
+      imp_ast_clone(node->data.let_stmt.var),
+      imp_ast_clone(node->data.let_stmt.aexpr),
+      imp_ast_clone(node->data.let_stmt.body_stmt));
+    case IMP_AST_NT_PROCDECL: return imp_ast_procdecl(
+      node->data.proc_decl.name,
+      ast_list_clone(node->data.proc_decl.val_args),
+      ast_list_clone(node->data.proc_decl.var_args),
+      imp_ast_clone(node->data.proc_decl.body_stmt));
+    case IMP_AST_NT_PROCCALL: return imp_ast_proccall(
+      node->data.proc_call.name,
+      ast_list_clone(node->data.proc_call.val_args),
+      ast_list_clone(node->data.proc_call.var_args));
+    default: assert(0 && "Unknown AST node type");
+  }
+}
+
+void imp_ast_free(IMP_ASTNode *node) {
+  if (!node) return;
+  switch (node->type) {
+    case IMP_AST_NT_SKIP:
+      break;
+    case IMP_AST_NT_ASSIGN:
+      imp_ast_free(node->data.assign.var);
+      imp_ast_free(node->data.assign.aexpr);
+      break;
+    case IMP_AST_NT_SEQ:
+      imp_ast_free(node->data.seq.fst_stmt);
+      imp_ast_free(node->data.seq.snd_stmt);
+      break;
+    case IMP_AST_NT_IF:
+      imp_ast_free(node->data.if_stmt.cond_bexpr);
+      imp_ast_free(node->data.if_stmt.then_stmt);
+      imp_ast_free(node->data.if_stmt.else_stmt);
+      break;
+    case IMP_AST_NT_WHILE:
+      imp_ast_free(node->data.while_stmt.cond_bexpr);
+      imp_ast_free(node->data.while_stmt.body_stmt);
+      break;
+    case IMP_AST_NT_INT:
+      break;
+    case IMP_AST_NT_VAR:
+      free(node->data.variable.name);
+      break;
+    case IMP_AST_NT_AOP:
+      imp_ast_free(node->data.arith_op.l_aexpr);
+      imp_ast_free(node->data.arith_op.r_aexpr);
+      break;
+    case IMP_AST_NT_BOP:
+      imp_ast_free(node->data.bool_op.l_bexpr);
+      imp_ast_free(node->data.bool_op.r_bexpr);
+      break;
+    case IMP_AST_NT_ROP:
+      imp_ast_free(node->data.rel_op.l_aexpr);
+      imp_ast_free(node->data.rel_op.r_aexpr);
+      break;
+    case IMP_AST_NT_NOT:
+      imp_ast_free(node->data.bool_not.bexpr);
+      break;
+    case IMP_AST_NT_LET:
+      imp_ast_free(node->data.let_stmt.var);
+      imp_ast_free(node->data.let_stmt.aexpr);
+      imp_ast_free(node->data.let_stmt.body_stmt);
+      break;
+    case IMP_AST_NT_PROCDECL:
+      free(node->data.proc_decl.name);
+      imp_ast_list_free(node->data.proc_decl.val_args);
+      imp_ast_list_free(node->data.proc_decl.var_args);
+      imp_ast_free(node->data.proc_decl.body_stmt);
+      break;
+    case IMP_AST_NT_PROCCALL:
+      free(node->data.proc_call.name);
+      imp_ast_list_free(node->data.proc_call.val_args);
+      imp_ast_list_free(node->data.proc_call.var_args);
+      break;
+    default: assert(0 && "Unknown AST node type");
+  }
+  free(node);
+}
+
+IMP_ASTNodeList *imp_ast_list(IMP_ASTNode *node, IMP_ASTNodeList *list) {
+  IMP_ASTNodeList *new_list = malloc(sizeof(IMP_ASTNodeList));
+  assert(new_list && "Memory allocation failed");
   new_list->node = node;
   new_list->next = list;
   return new_list;
 }
 
-static void ast_free_node_list(ASTNodeList *list) {
+void imp_ast_list_free(IMP_ASTNodeList *list) {
   if (!list) return;
-  ast_free(list->node);
-  ast_free_node_list(list->next);
+  imp_ast_free(list->node);
+  imp_ast_list_free(list->next);
   free(list);
-}
-
-void ast_free(ASTNode *node) {
-  if (!node) return;
-  switch (node->type) {
-    case NT_SKIP:
-      break;
-    case NT_ASSIGN:
-      ast_free(node->u.d_assign.var);
-      ast_free(node->u.d_assign.aexp);
-      break;
-    case NT_SEQ:
-      ast_free(node->u.d_seq.stm1);
-      ast_free(node->u.d_seq.stm2);
-      break;
-    case NT_IF:
-      ast_free(node->u.d_if.bexp);
-      ast_free(node->u.d_if.stm1);
-      ast_free(node->u.d_if.stm2);
-      break;
-    case NT_WHILE:
-      ast_free(node->u.d_while.bexp);
-      ast_free(node->u.d_while.stm);
-      break;
-    case NT_INT:
-      break;
-    case NT_VAR:
-      free(node->u.d_var.name);
-      break;
-    case NT_AOP:
-      ast_free(node->u.d_aop.aexp1);
-      ast_free(node->u.d_aop.aexp2);
-      break;
-    case NT_BOP:
-      ast_free(node->u.d_bop.bexp1);
-      ast_free(node->u.d_bop.bexp2);
-      break;
-    case NT_ROP:
-      ast_free(node->u.d_rop.aexp1);
-      ast_free(node->u.d_rop.aexp2);
-      break;
-    case NT_NOT:
-      ast_free(node->u.d_not.bexp);
-      break;
-    case NT_LET:
-      ast_free(node->u.d_let.var);
-      ast_free(node->u.d_let.aexp);
-      ast_free(node->u.d_let.stm);
-      break;
-    case NT_PROCDECL:
-      free(node->u.d_procdecl.name);
-      ast_free_node_list(node->u.d_procdecl.args);
-      ast_free_node_list(node->u.d_procdecl.vargs);
-      ast_free(node->u.d_procdecl.stm);
-      break;
-    case NT_PROCCALL:
-      free(node->u.d_proccall.name);
-      ast_free_node_list(node->u.d_proccall.args);
-      ast_free_node_list(node->u.d_proccall.vargs);
-      break;
-    default: assert(0);
-  }
-  free(node);
-}
-
-static ASTNodeList *ast_node_list_clone(ASTNodeList *list) {
-  if (!list) return NULL;
-  return ast_node_list(ast_clone(list->node), ast_node_list_clone(list->next));
-}
-
-ASTNode *ast_clone(ASTNode *node) {
-  if (!node) return NULL;
-  switch (node->type) {
-    case NT_SKIP: return ast_skip();
-    case NT_ASSIGN: return ast_assign(ast_clone(node->u.d_assign.var), ast_clone(node->u.d_assign.aexp));
-    case NT_SEQ: return ast_seq(ast_clone(node->u.d_seq.stm1), ast_clone(node->u.d_seq.stm2));
-    case NT_IF: return ast_if(
-      ast_clone(node->u.d_if.bexp),
-      ast_clone(node->u.d_if.stm1),
-      ast_clone(node->u.d_if.stm2));
-    case NT_WHILE: return ast_while(
-      ast_clone(node->u.d_while.bexp),
-      ast_clone(node->u.d_while.stm));
-    case NT_INT: return ast_int(node->u.d_int.val);
-    case NT_VAR: return ast_var(node->u.d_var.name);
-    case NT_AOP: return ast_aop(
-      node->u.d_aop.aop,
-      ast_clone(node->u.d_aop.aexp1),
-      ast_clone(node->u.d_aop.aexp2));
-    case NT_BOP: return ast_bop(
-      node->u.d_bop.bop,
-      ast_clone(node->u.d_bop.bexp1),
-      ast_clone(node->u.d_bop.bexp2));
-    case NT_NOT: return ast_not(ast_clone(node->u.d_not.bexp));
-    case NT_ROP: return ast_rop(
-      node->u.d_rop.rop,
-      ast_clone(node->u.d_rop.aexp1),
-      ast_clone(node->u.d_rop.aexp2));
-    case NT_LET: return ast_let(
-      ast_clone(node->u.d_let.var),
-      ast_clone(node->u.d_let.aexp),
-      ast_clone(node->u.d_let.stm));
-    case NT_PROCDECL: return ast_procdecl(
-      node->u.d_procdecl.name,
-      ast_node_list_clone(node->u.d_procdecl.args),
-      ast_node_list_clone(node->u.d_procdecl.vargs),
-      ast_clone(node->u.d_procdecl.stm));
-    case NT_PROCCALL: return ast_proccall(
-      node->u.d_proccall.name,
-      ast_node_list_clone(node->u.d_proccall.args),
-      ast_node_list_clone(node->u.d_proccall.vargs));
-    default: assert(0);
-  }
 }
