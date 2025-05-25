@@ -33,6 +33,13 @@ void imp_interpreter_context_destroy(IMP_InterpreterContext *context) {
   ptrdiff_t len = shlen(context->var_table);
   for (ptrdiff_t i = 0; i < len; ++i) free((char*)context->var_table[i].key);
   shfree(context->var_table);
+  len = shlen(context->proc_table);
+  for (ptrdiff_t i = 0; i < len; ++i) {
+    free((char*)context->proc_table[i].key);
+    imp_ast_destroy((IMP_ASTNode*)context->proc_table[i].value);
+  }
+  shfree(context->proc_table);
+  free(context);
 }
 
 int imp_interpreter_context_var_get(IMP_InterpreterContext *context, const char *name) {
