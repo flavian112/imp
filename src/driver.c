@@ -67,7 +67,6 @@ static void ast_print (IMP_ASTNode *node, int depth) {
     }
     case IMP_AST_NT_SEQ: {
       ast_print(node->data.seq.fst_stmt, depth);
-      printf("%*sSEQ\n", indent, "");
       ast_print(node->data.seq.snd_stmt, depth);
       break;
     }
