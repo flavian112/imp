@@ -170,27 +170,27 @@ IMP_ASTNode *imp_ast_clone(const IMP_ASTNode *node) {
   }
 }
 
-void imp_ast_free(IMP_ASTNode *node) {
+void imp_ast_destroy(IMP_ASTNode *node) {
   if (!node) return;
   switch (node->type) {
     case IMP_AST_NT_SKIP:
       break;
     case IMP_AST_NT_ASSIGN:
-      imp_ast_free(node->data.assign.var);
-      imp_ast_free(node->data.assign.aexpr);
+      imp_ast_destroy(node->data.assign.var);
+      imp_ast_destroy(node->data.assign.aexpr);
       break;
     case IMP_AST_NT_SEQ:
-      imp_ast_free(node->data.seq.fst_stmt);
-      imp_ast_free(node->data.seq.snd_stmt);
+      imp_ast_destroy(node->data.seq.fst_stmt);
+      imp_ast_destroy(node->data.seq.snd_stmt);
       break;
     case IMP_AST_NT_IF:
-      imp_ast_free(node->data.if_stmt.cond_bexpr);
-      imp_ast_free(node->data.if_stmt.then_stmt);
-      imp_ast_free(node->data.if_stmt.else_stmt);
+      imp_ast_destroy(node->data.if_stmt.cond_bexpr);
+      imp_ast_destroy(node->data.if_stmt.then_stmt);
+      imp_ast_destroy(node->data.if_stmt.else_stmt);
       break;
     case IMP_AST_NT_WHILE:
-      imp_ast_free(node->data.while_stmt.cond_bexpr);
-      imp_ast_free(node->data.while_stmt.body_stmt);
+      imp_ast_destroy(node->data.while_stmt.cond_bexpr);
+      imp_ast_destroy(node->data.while_stmt.body_stmt);
       break;
     case IMP_AST_NT_INT:
       break;
@@ -198,35 +198,35 @@ void imp_ast_free(IMP_ASTNode *node) {
       free(node->data.variable.name);
       break;
     case IMP_AST_NT_AOP:
-      imp_ast_free(node->data.arith_op.l_aexpr);
-      imp_ast_free(node->data.arith_op.r_aexpr);
+      imp_ast_destroy(node->data.arith_op.l_aexpr);
+      imp_ast_destroy(node->data.arith_op.r_aexpr);
       break;
     case IMP_AST_NT_BOP:
-      imp_ast_free(node->data.bool_op.l_bexpr);
-      imp_ast_free(node->data.bool_op.r_bexpr);
+      imp_ast_destroy(node->data.bool_op.l_bexpr);
+      imp_ast_destroy(node->data.bool_op.r_bexpr);
       break;
     case IMP_AST_NT_ROP:
-      imp_ast_free(node->data.rel_op.l_aexpr);
-      imp_ast_free(node->data.rel_op.r_aexpr);
+      imp_ast_destroy(node->data.rel_op.l_aexpr);
+      imp_ast_destroy(node->data.rel_op.r_aexpr);
       break;
     case IMP_AST_NT_NOT:
-      imp_ast_free(node->data.bool_not.bexpr);
+      imp_ast_destroy(node->data.bool_not.bexpr);
       break;
     case IMP_AST_NT_LET:
-      imp_ast_free(node->data.let_stmt.var);
-      imp_ast_free(node->data.let_stmt.aexpr);
-      imp_ast_free(node->data.let_stmt.body_stmt);
+      imp_ast_destroy(node->data.let_stmt.var);
+      imp_ast_destroy(node->data.let_stmt.aexpr);
+      imp_ast_destroy(node->data.let_stmt.body_stmt);
       break;
     case IMP_AST_NT_PROCDECL:
       free(node->data.proc_decl.name);
-      imp_ast_list_free(node->data.proc_decl.val_args);
-      imp_ast_list_free(node->data.proc_decl.var_args);
-      imp_ast_free(node->data.proc_decl.body_stmt);
+      imp_ast_list_destroy(node->data.proc_decl.val_args);
+      imp_ast_list_destroy(node->data.proc_decl.var_args);
+      imp_ast_destroy(node->data.proc_decl.body_stmt);
       break;
     case IMP_AST_NT_PROCCALL:
       free(node->data.proc_call.name);
-      imp_ast_list_free(node->data.proc_call.val_args);
-      imp_ast_list_free(node->data.proc_call.var_args);
+      imp_ast_list_destroy(node->data.proc_call.val_args);
+      imp_ast_list_destroy(node->data.proc_call.var_args);
       break;
     default: assert(0 && "Unknown AST node type");
   }
@@ -241,9 +241,9 @@ IMP_ASTNodeList *imp_ast_list(IMP_ASTNode *node, IMP_ASTNodeList *list) {
   return new_list;
 }
 
-void imp_ast_list_free(IMP_ASTNodeList *list) {
+void imp_ast_list_destroy(IMP_ASTNodeList *list) {
   if (!list) return;
-  imp_ast_free(list->node);
-  imp_ast_list_free(list->next);
+  imp_ast_destroy(list->node);
+  imp_ast_list_destroy(list->next);
   free(list);
 }

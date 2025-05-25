@@ -6,6 +6,7 @@ FLEX ?= flex
 
 SRC_DIR := src
 INC_DIR := include
+TEST_DIR := test
 BUILD_DIR := build
 
 PARSER_Y := $(SRC_DIR)/parser.y
@@ -23,11 +24,12 @@ LEXER_O := $(BUILD_DIR)/lex.yy.o
 OBJS := $(C_OBJS) $(PARSER_O) $(LEXER_O)
 
 TARGET := $(BUILD_DIR)/imp
+TEST_TARGET := $(BUILD_DIR)/test
 
-CFLAGS += -I$(INC_DIR) -MMD -MP
+CFLAGS += -I$(INC_DIR) -I. -MMD -MP
 DEPS := $(OBJS:.o=.d)
 
-.PHONY: all clean example repl
+.PHONY: all clean example repl test
 
 all: $(TARGET)
 
@@ -52,11 +54,17 @@ $(LEXER_C): $(LEXER_L) $(PARSER_H) | $(BUILD_DIR)
 $(LEXER_O): $(LEXER_C)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(TEST_TARGET): $(wildcard $(TEST_DIR)/*.c) $(filter-out $(BUILD_DIR)/main.o, $(OBJS)) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
 example: $(TARGET)
 	./$(TARGET) -i examples/example.imp
 
 repl: $(TARGET)
 	./$(TARGET)
+
+test: $(BUILD_DIR)/test
+	./$(BUILD_DIR)/test
 
 clean:
 	@rm -rf $(BUILD_DIR)

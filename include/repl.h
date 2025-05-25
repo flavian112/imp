@@ -1,8 +1,8 @@
-#ifndef REPL_H
-#define REPL_H
+#ifndef IMP_REPL_H
+#define IMP_REPL_H
 
 
-void repl(void);
+void imp_repl(void);
 
 
-#endif
+#endif /* IMP_REPL_H */

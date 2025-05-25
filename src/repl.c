@@ -8,7 +8,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "interpreter.h"
+#include "interpreter_context.h"
+#include "driver.h"
 
 
 static void print_help(void) {
@@ -31,7 +32,7 @@ static int is_valid_identifier(const char *var) {
   return 1;
 }
 
-static void repl_exec_command(context_t context, char *command) {
+static void repl_exec_command(IMP_InterpreterContext *context, char *command) {
   char *cmd = strtok(command, " \t");
   if (strcmp(cmd, "%quit") == 0) {
     exit(EXIT_SUCCESS);
@@ -40,7 +41,8 @@ static void repl_exec_command(context_t context, char *command) {
   } else if (strcmp(cmd, "%run") == 0) {
     char *file = strtok(NULL, " \t");
     if (file) {
-      if (!interp_file(context, file)) context_print_var_table(context);
+      if (!imp_driver_interpret_file(context, file)) imp_driver_print_var_table(context);
+      else fprintf(stderr, "Error interpreting file: %s\n", file);
     } else {
       fprintf(stderr, "Usage: %%run <path/to/file.imp>\n");
     }
@@ -49,7 +51,7 @@ static void repl_exec_command(context_t context, char *command) {
     char *val = strtok(NULL, " \t");
     if (var && val) {
       if (is_valid_identifier(var)) {
-        context_set_var(context, var, atoi(val));
+        imp_interpreter_context_var_set(context, var, atoi(val));
       } else {
         fprintf(stderr, "Invalid variable name: %s\n", var);
       }
@@ -58,28 +60,28 @@ static void repl_exec_command(context_t context, char *command) {
     char *var = strtok(NULL, " \t");
     if (var) {
       if (is_valid_identifier(var)) {
-        printf("%s = %d\n", var, context_get_var(context, var));
+        printf("%s = %d\n", var, imp_interpreter_context_var_get(context, var));
       } else {
         fprintf(stderr, "Invalid variable name: %s\n", var);
       }
-    } else context_print_var_table(context);
+    } else imp_driver_print_var_table(context);
   } else if (strcmp(cmd, "%procedures") == 0) {
-    context_print_proc_table(context);
+    imp_driver_print_proc_table(context);
   } else {
     fprintf(stderr, "Unknown command: %s\n", cmd);
   }
 }
 
-static void repl_exec_statement(context_t context, const char *statement) {
-  if (interp_str(context, statement)) {
+static void repl_exec_statement(IMP_InterpreterContext *context, const char *statement) {
+  if (imp_driver_interpret_str(context, statement)) {
     fprintf(stderr, "Error interpreting statement: %s\n", statement);
     return;
   }
-  context_print_var_table(context);
+  imp_driver_print_var_table(context);
 }
 
-void repl(void) {
-  context_t context = context_create();
+void imp_repl(void) {
+  IMP_InterpreterContext *context = imp_interpreter_context_create();
 
   char *line;
   print_help();
@@ -91,5 +93,5 @@ void repl(void) {
   }
   printf("\n");
 
-  context_free(context);
+  imp_interpreter_context_destroy(context);
 }

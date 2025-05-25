@@ -8,7 +8,6 @@
  * Provides data structures, enums, and functions for creating, managing, cloning, and freeing AST nodes.
  *
  * @author Flavian Kaufmann
- * @date 2025-05-23
  */
 
 
@@ -142,7 +141,7 @@ IMP_ASTNode *imp_ast_clone(const IMP_ASTNode *node);
  *
  * @param node Node to free.
  */
-void imp_ast_free(IMP_ASTNode *node);
+void imp_ast_destroy(IMP_ASTNode *node);
 
 /**
  * Creates a new linked list of AST nodes.
@@ -160,6 +159,6 @@ IMP_ASTNodeList *imp_ast_list(IMP_ASTNode *node, IMP_ASTNodeList *list);
  *
  * @param list List to free.
  */
-void imp_ast_list_free(IMP_ASTNodeList *list);
+void imp_ast_list_destroy(IMP_ASTNodeList *list);
 
 #endif /* IMP_AST_H */
