@@ -59,7 +59,7 @@ static void ast_print (IMP_ASTNode *node, int depth) {
       break;
     }
     case IMP_AST_NT_ASSIGN: {
-      printf("%*sASSIGN %s=", indent, "", 
+      printf("%*sASSIGN %s = ", indent, "", 
              node->data.assign.var->data.variable.name);
       ast_print(node->data.assign.aexpr, 0);
       printf("\n");
