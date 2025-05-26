@@ -20,6 +20,7 @@ int imp_driver_interpret_file (IMP_InterpreterContext *context, const char *path
   yyin = fopen(path, "r");
   if (!yyin) return -1;
   yyrestart(yyin);
+  ast_root = NULL;
   if (yyparse()) {
     imp_ast_destroy(ast_root);
     fclose(yyin);
@@ -37,6 +38,7 @@ int imp_driver_interpret_file (IMP_InterpreterContext *context, const char *path
 
 int imp_driver_interpret_str (IMP_InterpreterContext *context, const char *str) {
   YY_BUFFER_STATE buf = yy_scan_string(str);
+  ast_root = NULL;
   if (yyparse()) {
     imp_ast_destroy(ast_root);
     yy_delete_buffer(buf);

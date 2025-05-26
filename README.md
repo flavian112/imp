@@ -96,7 +96,7 @@ Control flow:
 Procedures:
 
 - `procedure <ident>(<var>, ... ; <var>, ... ) begin <stm> end` declaration, first argument list are value arguments (vars passed to procedure), second argument list are variable arguments (vars returned from procedure).
-- `<ident>(<var>, ... ; <var>, ... )` call
+- `<ident>(<aexpr>, ... ; <var>, ... )` call
 
 
 **Expression**
