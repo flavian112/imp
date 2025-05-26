@@ -69,9 +69,9 @@ static int interpret_proccall(IMP_InterpreterContext *context, const IMP_ASTNode
   IMP_ASTNodeList *caller_val_args = node->data.proc_call.val_args;
   IMP_ASTNodeList *callee_val_args = procdecl->data.proc_decl.val_args;
   while (caller_val_args && callee_val_args) {
-    const char *caller_arg_name = caller_val_args->node->data.variable.name;
+    int val = eval_aexpr(context, caller_val_args->node);
     const char *callee_arg_name = callee_val_args->node->data.variable.name;
-    imp_interpreter_context_var_set(proc_context, callee_arg_name, imp_interpreter_context_var_get(context, caller_arg_name));
+    imp_interpreter_context_var_set(proc_context, callee_arg_name, val);
     caller_val_args = caller_val_args->next;
     callee_val_args = callee_val_args->next;
   }

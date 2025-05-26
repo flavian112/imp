@@ -170,7 +170,7 @@ static void ast_print (IMP_ASTNode *node, int depth) {
       printf("%*sCALL %s(", indent, "", node->data.proc_call.name);
       IMP_ASTNodeList *args = node->data.proc_call.val_args;
       while (args) {
-        printf("%s", args->node->data.variable.name);
+        ast_print(args->node, 0);
         args = args->next;
         if (args) printf(", ");
       }

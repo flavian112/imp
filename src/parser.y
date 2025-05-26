@@ -1,14 +1,14 @@
+%error-verbose
 %{
 #include <stdio.h>
 #include "ast.h"
 
-extern char *yytext;
-extern int yylineno;
 extern int yylex();
-
 IMP_ASTNode *ast_root;
 
-void yyerror(const char *s) { 
+void yyerror(const char *s) {
+  extern char *yytext;
+  extern int yylineno;
   fprintf(stderr, "Parse error at token \"%s\", line %d: %s\n", yytext, yylineno, s); 
 }
 %}
@@ -37,25 +37,36 @@ void yyerror(const char *s) {
 %token       T_ASSIGN
 %token       T_LPAREN T_RPAREN T_COM T_SEM
 
-%type <node> prog stm var aexp bexp procd procc
-%type <node_list> args
+%type <node> prog tlstm stm var aexp bexp procd procc
+%type <node_list> argl, varl
 
 %%
 
-prog  : stm
+prog  : tlstm
         { ast_root = $1; }
       ;
 
-stm   : T_SKIP
-        { $$ = imp_ast_skip(); }
-      | var T_ASSIGN aexp
-        { $$ = imp_ast_assign($1, $3); }
-      | T_LPAREN stm T_SEM stm T_RPAREN
+tlstm : T_LPAREN tlstm T_SEM tlstm T_RPAREN
+        { $$ = imp_ast_seq($2, $4); }
+      | tlstm T_SEM tlstm
+        { $$ = imp_ast_seq($1, $3); }
+      | tlstm T_SEM
+        { $$ = $1; }
+      | stm
+        { $$ = $1; }
+      | procd
+        { $$ = $1; }
+
+stm   : T_LPAREN stm T_SEM stm T_RPAREN
         { $$ = imp_ast_seq($2, $4); }
       | stm T_SEM stm
         { $$ = imp_ast_seq($1, $3); }
       | stm T_SEM
         { $$ = $1; }
+      | T_SKIP
+        { $$ = imp_ast_skip(); }
+      | var T_ASSIGN aexp
+        { $$ = imp_ast_assign($1, $3); }
       | T_IF bexp T_THEN stm T_ELSE stm T_END
         { $$ = imp_ast_if($2, $4, $6); }
       | T_IF bexp T_THEN stm T_END
@@ -64,10 +75,9 @@ stm   : T_SKIP
         { $$ = imp_ast_while($2, $4); }
       | T_VAR var T_ASSIGN aexp T_IN stm T_END
         { $$ = imp_ast_let($2, $4, $6); }
-      | procd
-        { $$ = $1; }
       | procc
         { $$ = $1; }
+        
       ;
 
 var   : T_ID
@@ -116,17 +126,23 @@ bexp  : bexp T_OR bexp
         { $$ = imp_ast_rop(IMP_AST_ROP_EQ, imp_ast_int(0), imp_ast_int(1)); }
       ;
 
-args  : var
+argl  : aexp
         { $$ = imp_ast_list($1, NULL); }
-      | args T_COM var
+      | argl T_COM aexp
         { $$ = imp_ast_list($3, $1); }
       ;
 
-procd : T_PROC T_ID T_LPAREN args T_SEM args T_RPAREN T_BEGIN stm T_END
+varl  : var
+        { $$ = imp_ast_list($1, NULL); }
+      | argl T_COM var
+        { $$ = imp_ast_list($3, $1); }
+      ;
+
+procd : T_PROC T_ID T_LPAREN varl T_SEM varl T_RPAREN T_BEGIN stm T_END
         { $$ = imp_ast_procdecl($2, $4, $6, $9); }
       ;
 
-procc : T_ID T_LPAREN args T_SEM args T_RPAREN
+procc : T_ID T_LPAREN argl T_SEM varl T_RPAREN
         { $$ = imp_ast_proccall($1, $3, $5); }
       ;
 %%

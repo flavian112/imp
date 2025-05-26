@@ -11,6 +11,4 @@ procedure gcd(a, b; r) begin
   end;
 end;
 
-x := 48;
-y := 18;
-gcd(x, y; result);
+gcd(48, 18; result);
